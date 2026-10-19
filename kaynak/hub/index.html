@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Okul Öncesi Oyunlar</title>
+<meta name="description" content="Akıllı tahta için 5 okul öncesi oyunu. İnternetsiz çalışır; Windows, Mac, iPad ve akıllı tahtada tarayıcıda açılır.">
+<meta name="theme-color" content="#59B4EC">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Oyunlar">
+<style>
+/*@@FONTS@@*/
+:root{
+  --ui:'Fredoka','Trebuchet MS','Segoe UI',system-ui,sans-serif;
+  --read:'Andika','Segoe UI','Trebuchet MS',system-ui,sans-serif;
+  --sky-top:#59B4EC; --sky-bot:#D2F0FF; --sun:#FFD84D; --sun-glow:rgba(255,216,77,.42); --cloud:#FFFFFF;
+  --hill-back:#93CF72; --hill-front:#5DAE55;
+  --page:#EEF6EC; --paper:#FFFDF6; --paper-edge:#D3DEE8; --ink:#22303F; --ink-soft:#56657A;
+  --good:#2E9A57; --good-deep:#1E7440; --on-good:#FFFFFF; --focus:#1D6FE0;
+  --tag:#E6F1FB; --tag-ink:#1F5F9E; --title-shadow:#1F5F9E; --shadow:rgba(16,48,82,.22);
+  --kbd:#F1F4F8; --kbd-edge:#C9D3DF; --note:#FFF4C4; --note-edge:#EBD27A; --lede:#10304F;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --sky-top:#0E1A3A; --sky-bot:#2D4377; --sun:#F3EBCB; --sun-glow:rgba(243,235,203,.22); --cloud:rgba(205,218,245,.30);
+    --hill-back:#2E5A3B; --hill-front:#22472D;
+    --page:#141B2A; --paper:#222A3B; --paper-edge:#111726; --ink:#EEF2F8; --ink-soft:#A9B5C7;
+    --good:#34A862; --good-deep:#1E6B3C; --on-good:#FFFFFF; --focus:#7FB2FF;
+    --tag:#2B3A55; --tag-ink:#BFD6F5; --title-shadow:#0B2A55; --shadow:rgba(0,0,0,.45);
+    --kbd:#2B3446; --kbd-edge:#3D4A61; --note:#3A3423; --note-edge:#6B5B2A; --lede:#E6EEFA;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --sky-top:#0E1A3A; --sky-bot:#2D4377; --sun:#F3EBCB; --sun-glow:rgba(243,235,203,.22); --cloud:rgba(205,218,245,.30);
+  --hill-back:#2E5A3B; --hill-front:#22472D;
+  --page:#141B2A; --paper:#222A3B; --paper-edge:#111726; --ink:#EEF2F8; --ink-soft:#A9B5C7;
+  --good:#34A862; --good-deep:#1E6B3C; --on-good:#FFFFFF; --focus:#7FB2FF;
+  --tag:#2B3A55; --tag-ink:#BFD6F5; --title-shadow:#0B2A55; --shadow:rgba(0,0,0,.45);
+  --kbd:#2B3446; --kbd-edge:#3D4A61; --note:#3A3423; --note-edge:#6B5B2A; --lede:#E6EEFA;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--read);font-size:17px;line-height:1.55}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:12px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Gökyüzü başlığı: oyunlardaki sahnenin aynısı */
+.sky{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--sky-top),var(--sky-bot));padding-block:56px 120px}
+.sun{position:absolute;right:9%;top:34px;width:110px;height:110px;border-radius:50%;background:var(--sun);box-shadow:0 0 0 22px var(--sun-glow)}
+.cloud{position:absolute;height:38px;border-radius:40px;background:var(--cloud)}
+.cloud::before,.cloud::after{content:"";position:absolute;background:var(--cloud);border-radius:50%}
+.cloud::before{width:56px;height:56px;left:18%;top:-28px}.cloud::after{width:74px;height:74px;left:44%;top:-40px}
+.c1{width:170px;left:54%;top:26px}.c2{width:130px;right:26%;top:150px;opacity:.85}
+.hills{position:absolute;left:0;right:0;bottom:-1px;width:100%;height:110px;display:block}
+.hills .b{fill:var(--hill-back)}.hills .f{fill:var(--hill-front)}.hills .g{fill:var(--page)}
+.head{position:relative;z-index:1}
+.kicker{display:inline-block;font-family:var(--ui);font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(18,60,110,.28);padding:5px 14px;border-radius:999px}
+h1{font-family:var(--ui);font-weight:700;font-size:clamp(40px,6.4vw,74px);line-height:1.02;margin:16px 0 14px;color:#fff;text-wrap:balance;
+  text-shadow:0 3px 0 var(--title-shadow),3px 0 0 var(--title-shadow),-3px 0 0 var(--title-shadow),0 -3px 0 var(--title-shadow),2px 2px 0 var(--title-shadow),-2px 2px 0 var(--title-shadow),2px -2px 0 var(--title-shadow),-2px -2px 0 var(--title-shadow),0 8px 0 var(--title-shadow)}
+.lede{max-width:40em;margin:0;font-size:19px;color:var(--lede);font-weight:700}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 0;padding:0;list-style:none}
+.facts li{font-family:var(--ui);font-weight:500;font-size:16px;background:var(--paper);color:var(--ink);padding:7px 14px;border-radius:999px;box-shadow:0 3px 0 var(--paper-edge)}
+
+/* Oyun kartları */
+main{padding-block:8px 40px}
+h2{font-family:var(--ui);font-weight:700;font-size:clamp(26px,3.4vw,34px);line-height:1.15;margin:44px 0 6px;text-wrap:balance}
+.sub{margin:0 0 22px;color:var(--ink-soft);max-width:44em}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:22px;margin:0;padding:0;list-style:none}
+.game{display:flex;flex-direction:column;min-width:0;background:var(--paper);border-radius:22px;overflow:hidden;box-shadow:0 4px 0 var(--paper-edge),0 18px 34px -22px var(--shadow)}
+.shot{display:block;aspect-ratio:16/9;max-width:100%;background:var(--tag)}
+.shot img{display:block;width:100%;height:100%;object-fit:cover}
+.gbody{display:flex;flex-direction:column;gap:10px;padding:18px 20px 20px;flex:1}
+.gbody h3{font-family:var(--ui);font-weight:600;font-size:25px;line-height:1.15;margin:0}
+.gbody p{margin:0;color:var(--ink-soft)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0;padding:0;list-style:none}
+.tags li{font-family:var(--ui);font-weight:500;font-size:14px;letter-spacing:.01em;background:var(--tag);color:var(--tag-ink);padding:3px 11px;border-radius:999px}
+.play{margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:8px;font-family:var(--ui);font-weight:600;font-size:19px;text-decoration:none;color:var(--on-good);
+  background:var(--good);padding:10px 22px;border-radius:999px;box-shadow:0 4px 0 var(--good-deep);transition:transform .12s,box-shadow .12s}
+.play:hover{transform:translateY(-1px)}
+.play:active{transform:translateY(3px);box-shadow:0 1px 0 var(--good-deep)}
+.play svg{width:18px;height:18px}
+.inside{margin:26px 0 0;padding:18px 22px;border-radius:18px;background:var(--note);border:2px dashed var(--note-edge)}
+.inside b{font-family:var(--ui);font-weight:600}
+
+/* Nasıl açılır */
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.dev{min-width:0;background:var(--paper);border-radius:20px;padding:20px 22px;box-shadow:0 4px 0 var(--paper-edge)}
+.dev h3{display:flex;align-items:center;gap:10px;font-family:var(--ui);font-weight:600;font-size:22px;margin:0 0 10px}
+.dev h3 svg{width:30px;height:30px;flex:none;color:var(--tag-ink)}
+.dev ol{margin:0;padding-left:1.25em;display:grid;gap:8px}
+.dev li{padding-left:2px}
+.dev .tip{margin:12px 0 0;font-size:15.5px;color:var(--ink-soft)}
+kbd{font-family:var(--ui);font-weight:500;font-size:.9em;background:var(--kbd);border:1px solid var(--kbd-edge);border-bottom-width:3px;border-radius:7px;padding:0 6px;white-space:nowrap}
+.path{font-weight:700}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:18px}
+.notes p{margin:0;min-width:0;background:var(--paper);border-radius:18px;padding:16px 20px;box-shadow:0 4px 0 var(--paper-edge)}
+.notes b{font-family:var(--ui);font-weight:600}
+footer{padding-block:10px 36px;color:var(--ink-soft);font-size:15px}
+footer a{overflow-wrap:anywhere}
+@media (max-width:480px){
+  body{font-size:16px}
+  .sky{padding-block:38px 96px}.sun{width:74px;height:74px;right:6%;top:24px;box-shadow:0 0 0 14px var(--sun-glow)}
+  .c1,.c2{display:none}
+  .games{grid-template-columns:1fr}
+  .lede{font-size:17px}
+}
+@media (prefers-reduced-motion: reduce){.play{transition:none}}
+</style>
+</head>
+<body>
+<header class="sky">
+  <div class="sun" aria-hidden="true"></div>
+  <div class="cloud c1" aria-hidden="true"></div>
+  <div class="cloud c2" aria-hidden="true"></div>
+  <div class="wrap head">
+    <span class="kicker">Akıllı tahta oyunları</span>
+    <h1>Okul Öncesi Oyunlar</h1>
+    <p class="lede">Harf, ses, dikkat, bellek ve çizgi çalışmaları için beş oyun. Kurulum gerekmez; dosyayı tarayıcıda açmanız yeterli.</p>
+    <ul class="facts">
+      <li>İnternetsiz çalışır</li><li>Windows · Mac · iPad · akıllı tahta</li><li>Türkçe seslendirme</li><li>1, 2 ya da 4 çocuk aynı anda</li>
+    </ul>
+  </div>
+  <svg class="hills" viewBox="0 0 1440 110" preserveAspectRatio="none" aria-hidden="true">
+    <path class="b" d="M0 58 C 220 10 420 20 640 52 S 1080 96 1440 40 V110 H0Z"/>
+    <path class="f" d="M0 82 C 260 44 520 60 760 80 S 1180 104 1440 70 V110 H0Z"/>
+    <path class="g" d="M0 104 C 360 92 1080 92 1440 104 V110 H0Z"/>
+  </svg>
+</header>
+
+<main class="wrap">
+  <h2 id="oyunlar">Oyunlar</h2>
+  <p class="sub"><b>Oyna</b> düğmesi oyunu bu pencerede açar. Listeye dönmek için oyunun ana ekranındaki <b>Oyun listesi</b> düğmesine basın.</p>
+  <ul class="games">
+    <!--@@GAMES@@-->
+  </ul>
+  <p class="inside"><b>Harf oyunlarının içinde:</b> Mandallı Kelimeler, Harf Avcıları, Ahtapot ve Hafıza Bavulu'nda ana oyunun yanında puanlı <i>Gruplara ayır</i>, <i>Bil bakalım</i>, <i>Eşini bul</i> ile öğretmenle oynanan <i>Kutuyu aç</i>, <i>Çarkı çevir</i>, <i>Konuşma kartları</i> ve <i>Bilgi kartları</i> da var.</p>
+
+  <h2 id="nasil">Hangi cihazda nasıl açılır?</h2>
+  <p class="sub">Oyunlar her cihazda aynı görünür ve ekrana kendiliğinden sığar. Seslendirme, cihazda yüklü Türkçe sesi kullanır; ses yoksa oyunlar sessiz çalışmaya devam eder.</p>
+  <div class="how">
+    <section class="dev" aria-labelledby="d-win">
+      <h3 id="d-win"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="26" height="17" rx="2"/><path d="M11 27h10M16 22v5"/></svg>Akıllı tahta ve Windows</h3>
+      <ol>
+        <li>Web adresini ya da zip'teki <b>index.html</b> dosyasını <b>Microsoft Edge</b> veya Chrome ile açın.</li>
+        <li>Kadın sesi (“Emel”) için Edge'i seçin.</li>
+        <li>Tam ekran için <kbd>F11</kbd> ya da oyundaki <b>Tam ekran</b> düğmesi.</li>
+      </ol>
+    </section>
+    <section class="dev" aria-labelledby="d-mac">
+      <h3 id="d-mac"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="20" height="14" rx="2"/><path d="M2.5 25h27l-2-5h-23z"/></svg>Mac</h3>
+      <ol>
+        <li>Web adresini Safari ya da Chrome'da açın. Zip kullanıyorsanız klasördeki <b>index.html</b>'e çift tıklayın.</li>
+        <li>Tam ekran: <kbd>Control</kbd> + <kbd>Command</kbd> + <kbd>F</kbd>.</li>
+        <li>Ses gelmiyorsa: <span class="path">Sistem Ayarları → Erişilebilirlik → Oku ve Seslendir</span> (eski sürümlerde <i>Seslendirilen İçerik</i>) → <b>Sistem sesi</b> yanındaki ⓘ → Türkçe → <b>Yelda</b>'yı indirin, tarayıcıyı kapatıp açın.</li>
+      </ol>
+      <p class="tip">Touchpad'de iki parmakla sıkıştırmak oyunu büyütmez; sürükleme tek parmakla yapılır.</p>
+    </section>
+    <section class="dev" aria-labelledby="d-tab">
+      <h3 id="d-tab"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="18" height="26" rx="3"/><path d="M14 25h4"/></svg>iPad ve tablet</h3>
+      <ol>
+        <li>Web adresini Safari ya da Chrome'da açın. Dosyalar uygulamasındaki önizleme oyunu çalıştırmaz.</li>
+        <li>Paylaş → <b>Ana Ekrana Ekle</b> deyin; oyunlar simgeden uygulama gibi açılır.</li>
+        <li>iPad'de ses için: <span class="path">Ayarlar → Erişilebilirlik → Oku ve Seslendir → Sesler → Türkçe</span> → <b>Yelda</b>.</li>
+      </ol>
+    </section>
+  </div>
+  <div class="notes">
+    <p><b>İnternetsiz kullanım:</b> Web adresini bir kez açtıktan sonra oyunlar o cihazda internet olmadan da açılır. Yeni sürüm çıktığında, internete bağlanınca kendiliğinden güncellenir.</p>
+    <p><b>Kayıtlar:</b> Skorlar, ayarlar ve sınıf listesi oyunu açtığınız cihazın tarayıcısında saklanır. Başka bir cihaza ya da tarayıcıya taşınmaz.</p>
+    <p><b>Ses seçimi:</b> Her oyunda <b>Ayarlar → Konuşan ses</b> bölümünden ses ve konuşma hızı seçilir; cihazınıza göre eksik sesin nasıl ekleneceği de orada yazar.</p>
+  </div>
+</main>
+<footer class="wrap">Okul öncesi akıllı tahta oyunları · Web adresi: <a href="https://eyupcalskanozturk-tr.github.io/okul-oncesi-oyunlar/">eyupcalskanozturk-tr.github.io/okul-oncesi-oyunlar</a> · Sürüm: <!--@@DATE@@--></footer>
+<script>
+/* Web adresinden açıldığında oyunlar cihaza kaydedilir; sonra internetsiz de açılır. Zip'ten (file://) açılınca bir şey yapmaz. */
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {});
+</script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+OKUL ÖNCESİ AKILLI TAHTA OYUNLARI
+=================================
+
+Web adresi: @@SITE@@
+(İnternet varsa en kolayı bu adresi açmak. Adresi bir kez açtıktan sonra oyunlar o cihazda internetsiz de açılır.)
+
+Zip'ten kullanmak için index.html dosyasını açın. Oyun listesi açılır; her oyunun "Oyna" düğmesi var.
+Oyunlar "oyunlar" klasöründedir ve her dosya tek başına da açılabilir. İnternet gerekmez.
+
+1) Mandallı Kelimeler  - Harf mandallarını kelimenin altına soldan sağa sırayla takma.
+2) Harf Avcıları       - Harfli ve sayılı balonlar, tekerleme ekranı.
+3) Ahtapot             - Resimleri ilk sesine göre doğru ahtapotun koluna yerleştirme.
+4) Hafıza Bavulu       - "Ben tatile gidiyorum ve yanıma ... alıyorum" zinciri.
+5) Çizgi Takibi        - Desenlerin üzerinden fırça/süngerle geçme ve boyama; tahta 1, 2 veya 4 çocuğa bölünür.
+
+İlk dört oyunda Gruplara ayır, Bil bakalım, Eşini bul, Kutuyu aç, Çarkı çevir, Konuşma kartları ve Bilgi kartları ek oyunları da var.
+
+AKILLI TAHTA / WINDOWS
+- Web adresini ya da index.html'i Microsoft Edge veya Chrome ile açın.
+- Kadın sesi ("Emel") için Edge ile açın.
+- Tam ekran: F11 ya da oyundaki Tam ekran düğmesi.
+
+MAC
+- Web adresini Safari veya Chrome ile açın. Zip kullanıyorsanız klasördeki index.html'e çift tıklayın.
+- Tam ekran: Control + Command + F.
+- Ses gelmiyorsa: Sistem Ayarları > Erişilebilirlik > Oku ve Seslendir (eski sürümlerde "Seslendirilen İçerik")
+  > Sistem sesi yanındaki (i) düğmesi > Türkçe > "Yelda" sesini indirin, sonra tarayıcıyı kapatıp açın.
+
+iPAD / TABLET
+- Web adresini Safari veya Chrome ile açın, Paylaş > Ana Ekrana Ekle deyin.
+- iPad'de ses: Ayarlar > Erişilebilirlik > Oku ve Seslendir > Sesler > Türkçe > Yelda.
+
+Kayıtlar: Skorlar, ayarlar ve sınıf listesi oyunu açtığınız cihazın tarayıcısında saklanır.

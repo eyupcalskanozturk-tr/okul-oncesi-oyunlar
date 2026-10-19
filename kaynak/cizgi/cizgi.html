@@ -1,0 +1,1150 @@
+<title>Çizgi Takibi</title>
+<style>
+/*@@FONTS@@*/
+/* Sabit 1600×900 sahne, ekrana göre ölçeklenir. Kâğıtlar her temada beyaz kalır; boya beyaz kâğıtta doğru görünür. */
+:root{
+  --ui:'Fredoka','Trebuchet MS','Segoe UI',system-ui,sans-serif;
+  --read:'Andika','Segoe UI','Trebuchet MS',system-ui,sans-serif;
+  --bg:#B8865A;
+  --wood1:#D9A877; --wood2:#C6915E; --seam:rgba(92,52,20,.22); --grain:rgba(255,255,255,.07);
+  --sheet:#FFFEFA; --sheet-edge:rgba(70,40,15,.28);
+  --paper:#FFFDF6; --paper-2:#FFFFFF; --paper-edge:#D9CBB8;
+  --ink:#2A2620; --ink-soft:#6B6156; --on-wood:#FFF8EC; --title-shadow:#7A4A22;
+  --good:#2E9A57; --good-deep:#1E7440; --bad:#D5473A; --bad-deep:#9E2F25; --focus:#1D6FE0; --gold:#F2B705;
+  --shadow:rgba(60,32,10,.38); --scrim:rgba(40,22,8,.45);
+  --road:rgba(120,150,185,.20); --road-edge:rgba(110,140,175,.35); --line:#55606C; --line-solid:#24272B;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#2A1C12; --wood1:#5A3D27; --wood2:#4A3120; --seam:rgba(0,0,0,.35); --grain:rgba(255,255,255,.04);
+    --paper:#2A2622; --paper-2:#211E1A; --paper-edge:#120F0C; --ink:#F3EEE6; --ink-soft:#BFB4A6; --on-wood:#FFF3E2; --title-shadow:#120A04;
+    --shadow:rgba(0,0,0,.55); --scrim:rgba(0,0,0,.55); --sheet-edge:rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#2A1C12; --wood1:#5A3D27; --wood2:#4A3120; --seam:rgba(0,0,0,.35); --grain:rgba(255,255,255,.04);
+  --paper:#2A2622; --paper-2:#211E1A; --paper-edge:#120F0C; --ink:#F3EEE6; --ink-soft:#BFB4A6; --on-wood:#FFF3E2; --title-shadow:#120A04;
+  --shadow:rgba(0,0,0,.55); --scrim:rgba(0,0,0,.55); --sheet-edge:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);touch-action:none}
+body{font-family:var(--ui);color:var(--ink);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:default}
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
+[hidden]{display:none !important}
+
+#stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;margin:-450px 0 0 -800px;transform-origin:50% 50%;overflow:hidden;overflow:clip;
+  background:repeating-linear-gradient(90deg,transparent 0 3px,var(--grain) 3px 4px,transparent 4px 37px),
+    repeating-linear-gradient(180deg,transparent 0 178px,var(--seam) 178px 180px),
+    linear-gradient(170deg,var(--wood1),var(--wood2))}
+#home,#draw{position:absolute;inset:0}
+#stage:not([data-screen="home"]) #home,#stage:not([data-screen="draw"]) #draw{display:none}
+
+/* ---------- Ortak parçalar ---------- */
+.chip{background:var(--paper);border-radius:22px;box-shadow:0 4px 0 var(--paper-edge),0 10px 20px -6px var(--shadow);display:flex;align-items:center}
+.btn{border:0;border-radius:20px;font-family:var(--ui);font-weight:600;white-space:nowrap;transition:transform .08s,box-shadow .08s;display:inline-flex;align-items:center;gap:10px}
+.btn svg{width:1.05em;height:1.05em;flex:none}
+.btn.go{background:var(--good);color:#fff;font-size:30px;padding:14px 34px;box-shadow:0 7px 0 var(--good-deep),0 14px 22px -8px var(--shadow)}
+.btn.go:active{transform:translateY(5px);box-shadow:0 2px 0 var(--good-deep)}
+.btn.plain{background:var(--paper);color:var(--ink);font-size:24px;padding:12px 24px;box-shadow:0 5px 0 var(--paper-edge),0 12px 20px -8px var(--shadow)}
+.btn.plain:active{transform:translateY(4px);box-shadow:0 1px 0 var(--paper-edge)}
+.btn.ghost{background:transparent;color:var(--ink-soft);font-size:22px;font-weight:500;padding:8px 14px;border-radius:12px}
+.btn.danger{background:var(--bad);color:#fff;font-size:22px;padding:10px 20px;box-shadow:0 4px 0 var(--bad-deep)}
+.ibtn{width:62px;height:62px;border-radius:50%;border:0;background:var(--paper);color:var(--ink);display:grid;place-items:center;box-shadow:0 4px 0 var(--paper-edge),0 10px 18px -6px var(--shadow);flex:none}
+.ibtn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--paper-edge)}
+.ibtn svg{width:30px;height:30px}
+.ibtn.off{color:var(--ink-soft)}
+.ibtn.armed,.btn.armed{background:var(--bad);color:#fff;box-shadow:0 4px 0 var(--bad-deep)}
+.seg{display:inline-flex;gap:4px;padding:5px;border-radius:999px;background:rgba(120,96,70,.16)}
+.seg button{border:0;background:transparent;border-radius:999px;padding:7px 18px;font-size:21px;font-weight:500;color:var(--ink-soft)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* ---------- Ana ekran ---------- */
+.h-top{position:absolute;left:44px;top:26px;right:44px;height:150px;display:flex;align-items:center;gap:26px}
+.h-logo{width:118px;height:118px;flex:none;background:var(--sheet);border-radius:22px;transform:rotate(-4deg);box-shadow:0 3px 0 var(--sheet-edge),0 14px 26px -10px var(--shadow);display:grid;place-items:center}
+.h-logo svg{width:96px;height:96px}
+.h-title{flex:1;min-width:0}
+.h-title h1{font-size:76px;font-weight:700;line-height:1;color:var(--on-wood);text-shadow:0 4px 0 var(--title-shadow),0 10px 22px rgba(0,0,0,.25);letter-spacing:.5px}
+.h-title p{font-size:27px;color:var(--on-wood);opacity:.92;margin-top:10px;font-weight:500;text-shadow:0 2px 6px rgba(0,0,0,.25)}
+.h-side{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.h-lay{padding:14px 18px 14px 22px;gap:14px}
+.h-lay > span{font-size:21px;font-weight:600;color:var(--ink-soft);line-height:1.15}
+.h-lay .seg button{font-size:22px;padding:9px 18px;display:inline-flex;align-items:center;gap:8px}
+.h-lay .seg svg{width:30px;height:22px}
+.h-set{font-size:22px;padding:10px 20px}
+.h-acts{display:flex;gap:12px}
+a.h-set{text-decoration:none;display:inline-flex;align-items:center;gap:8px;color:inherit}
+a.h-set svg{width:24px;height:24px}
+.grid{position:absolute;left:44px;top:196px;right:44px;bottom:26px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:22px 26px}
+.card{position:relative;border:0;background:var(--sheet);border-radius:8px;box-shadow:0 2px 0 var(--sheet-edge),0 16px 26px -14px var(--shadow);transform:rotate(var(--r,0deg));transition:transform .12s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 16px 10px;color:#2A2620}
+.card:active{transform:rotate(var(--r,0deg)) scale(.96)}
+.card .th{width:100%;flex:1;min-height:0;display:block}
+.card b{font-size:25px;font-weight:600;margin-top:6px;line-height:1.1}
+.card.mix .th{display:grid;place-items:center}
+.card.mix .dice{width:96px;height:96px}
+
+/* ---------- Çizim ekranı: üst çubuk ---------- */
+#topbar{position:absolute;left:16px;top:14px;right:16px;height:70px;display:flex;align-items:center;gap:12px;z-index:5}
+#topbar .ibtn{width:62px;height:62px}
+.tpl-chip{height:66px;padding:0 8px;gap:4px}
+.tpl-chip .ar{width:52px;height:52px;border:0;border-radius:50%;background:transparent;display:grid;place-items:center;color:var(--ink)}
+.tpl-chip .ar:active{background:rgba(120,96,70,.16)}
+.tpl-chip .ar svg{width:30px;height:30px}
+.tpl-name{display:flex;align-items:center;gap:12px;min-width:250px;padding:0 6px;font-size:28px;font-weight:600;white-space:nowrap}
+.tpl-name svg{width:68px;height:34px;background:#fff;border-radius:6px;box-shadow:inset 0 0 0 2px #E8DCCB;flex:none}
+.tpl-name span.armed{color:var(--bad);font-size:20px;white-space:normal;line-height:1.1;max-width:230px}
+.prog{height:66px;padding:0 22px;gap:14px;flex:1;min-width:0;max-width:420px}
+.prog .bar{flex:1;height:18px;border-radius:9px;background:rgba(120,96,70,.18);overflow:hidden}
+.prog .bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#3FB068,#7BD389);transition:width .25s}
+.prog b{font-size:26px;font-weight:600;min-width:64px;text-align:right}
+.prog .stars{display:flex;gap:2px}
+.prog .stars svg{width:26px;height:26px;color:rgba(120,96,70,.3)}
+.prog .stars svg.on{color:var(--gold)}
+.tb-sp{flex:1}
+.tb-lbl{font-size:26px;font-weight:600;color:var(--on-wood);text-shadow:0 2px 0 var(--title-shadow);white-space:nowrap}
+.btn.tbb{height:62px;font-size:22px;padding:0 20px}
+
+/* ---------- Paneller ---------- */
+#panels{position:absolute;left:0;top:0;width:1600px;height:900px}
+.pn{position:absolute}
+.pn-head{position:absolute;left:0;right:0;top:0;height:48px;display:flex;align-items:center;gap:6px}
+.pn-no{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:24px;font-weight:700;color:#fff;background:var(--c);box-shadow:0 3px 0 rgba(0,0,0,.18)}
+.pn-tpl{flex:1;min-width:0;height:44px;padding:0 4px;border-radius:14px}
+.pn-tpl .ar{width:38px;height:38px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink);border-radius:50%;flex:none}
+.pn-tpl .ar svg{width:24px;height:24px}
+.pn-tpl span{flex:1;min-width:0;text-align:center;font-size:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pn-tpl span.armed{color:var(--bad);font-size:15px;white-space:normal;line-height:1.05}
+.pn-head .ibtn{width:44px;height:44px}
+.pn-head .ibtn svg{width:22px;height:22px}
+.pn-bar{position:absolute;left:52px;right:0;top:46px;height:6px;border-radius:3px;background:rgba(0,0,0,.12);overflow:hidden}
+.pn-bar i{display:block;height:100%;width:0;background:#3FB068;transition:width .25s}
+.pp{position:absolute;background:var(--sheet);border-radius:6px;box-shadow:0 2px 0 var(--sheet-edge),0 18px 30px -16px var(--shadow);overflow:hidden;touch-action:none}
+.pp canvas,.pp svg.gd,.pp svg.mk{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none}
+.pp .road{fill:none;stroke:var(--road);stroke-linecap:round;stroke-linejoin:round}
+.pp .line{fill:none;stroke:var(--line);stroke-linecap:round;stroke-linejoin:round}
+.pp.solid .line{stroke:var(--line-solid)}
+.pp .st circle{fill:#2E9A57;stroke:#fff;stroke-width:3}
+.pp .st .arw path{fill:none;stroke:#fff;stroke-linecap:round;stroke-linejoin:round}
+.pp .st .ok{display:none;fill:none;stroke:#fff;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round}
+.pp .st.done circle{fill:#F2B705}
+.pp .st.done .arw{display:none}
+.pp .st.done .ok{display:block}
+.pp .en path{fill:#FFC531;stroke:#E59A00;stroke-width:2.5;stroke-linejoin:round}
+.pp .en.done path{fill:#FFE27A}
+.pp.nomarks .st,.pp.nomarks .en{display:none}
+.pp .st.pulse circle{animation:pulse 1.3s ease-in-out infinite}
+@keyframes pulse{50%{stroke-width:9;stroke:rgba(46,154,87,.35)}}
+.pp .demo{fill:none;stroke:#FF8B3A;stroke-linecap:round;stroke-linejoin:round;opacity:.9;transition:opacity .6s}
+.pp .demo-dot{fill:#FFD84D;stroke:#FF8B3A;stroke-width:5}
+.pp.fade .demo,.pp.fade .demo-dot{opacity:0}
+
+/* Kutlama şeridi */
+.cel{position:absolute;left:50%;top:18px;transform:translate(-50%,-140%);background:var(--paper);color:var(--ink);border-radius:22px;padding:12px 18px 12px 24px;display:flex;align-items:center;gap:16px;
+  box-shadow:0 6px 0 var(--paper-edge),0 20px 30px -10px var(--shadow);transition:transform .45s cubic-bezier(.2,1.4,.4,1);z-index:3;max-width:94%}
+.cel.on{transform:translate(-50%,0)}
+.cel .cs{display:flex;gap:2px;flex:none}
+.cel .cs svg{width:40px;height:40px;color:#D9CBB8}
+.cel .cs svg.on{color:var(--gold);animation:pop .5s backwards}
+.cel .cs svg:nth-child(2){animation-delay:.15s}.cel .cs svg:nth-child(3){animation-delay:.3s}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+.cel b{display:block;font-size:30px;font-weight:700;line-height:1.1}
+.cel small{display:block;font-size:19px;color:var(--ink-soft);margin-top:2px}
+.cel .btn{font-size:20px;padding:8px 16px}
+.L4 .cel{flex-wrap:wrap;justify-content:center;padding:10px 12px;gap:6px 10px;text-align:center}
+.L4 .cel .cs svg{width:30px;height:30px}
+.L4 .cel b{font-size:22px}
+.L4 .cel small{font-size:15px}
+
+/* Araç çubuğu */
+.tbar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:18px;--cur:#E53935}
+.sws{display:flex;gap:8px}
+.sw{width:var(--s);height:var(--s);border-radius:50%;border:0;padding:0;background:var(--c);flex:none;position:relative;
+  box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),inset 0 4px 0 rgba(255,255,255,.35),0 3px 0 rgba(0,0,0,.25);transition:transform .1s}
+.sw.rb{background:conic-gradient(#E53935,#FB8C00,#FDD835,#7CB342,#00ACC1,#1E88E5,#8E24AA,#EC407A,#E53935)}
+.sw[aria-pressed="true"]{transform:translateY(-5px) scale(1.04);box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--ink),0 8px 12px -4px rgba(0,0,0,.4);z-index:1}
+.sw[aria-pressed="true"]::after{content:"";position:absolute;inset:30%;border-radius:50%;background:rgba(255,255,255,.85)}
+.tls,.szs{display:flex;gap:8px}
+.tool,.tbtn{border:0;border-radius:18px;background:var(--paper);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:none;
+  box-shadow:0 4px 0 var(--paper-edge),0 10px 16px -8px var(--shadow);font-weight:600}
+.tool svg,.tbtn svg{display:block}
+.tool[aria-pressed="true"]{background:#FFE9A8;color:#2A2620;box-shadow:0 0 0 4px var(--ink),0 4px 0 4px var(--ink)}
+.tool:active,.tbtn:active{transform:translateY(3px)}
+.tbtn:disabled{opacity:.4;transform:none}
+.size i{display:block;border-radius:50%;background:var(--cur)}
+.size.rb i,.tbar.rb .size i{background:conic-gradient(#E53935,#FDD835,#00ACC1,#8E24AA,#E53935)}
+.sep{width:2px;align-self:stretch;margin:14px 0;background:rgba(255,255,255,.35);border-radius:1px}
+/* 1 çocuk */
+.L1 .sw{--s:52px}
+.L1 .tool,.L1 .tbtn{width:88px;height:86px;font-size:18px}
+.L1 .tool svg,.L1 .tbtn svg{width:48px;height:48px}
+.L1 .size{width:54px}
+/* 2 çocuk */
+.L2 .tbar{flex-wrap:wrap;row-gap:12px;gap:10px;align-content:flex-end}
+.L2 .sws{flex-basis:100%;justify-content:center}
+.L2 .sw{--s:48px}
+.L2 .tool,.L2 .tbtn{width:76px;height:70px;font-size:15px}
+.L2 .tool svg,.L2 .tbtn svg{width:38px;height:38px}
+.L2 .size{width:52px}
+.L2 .sep{display:none}
+/* 4 çocuk */
+.L4 .tbar{flex-direction:column;gap:10px}
+.L4 .sws{display:grid;grid-template-columns:repeat(7,44px);gap:8px 8px;justify-content:center}
+.L4 .sw{--s:44px}
+.L4 .tls{gap:6px}
+.L4 .row3{display:flex;gap:6px}
+.L4 .tool,.L4 .tbtn{width:57px;height:58px;font-size:0}
+.L4 .tool svg,.L4 .tbtn svg{width:36px;height:36px}
+.L4 .sep{display:none}
+
+/* ---------- Pencere, bildirim, efekt ---------- */
+#fx{position:absolute;left:0;top:0;width:1600px;height:900px;z-index:40;pointer-events:none}
+#modal{position:absolute;inset:0;z-index:50;background:var(--scrim);display:flex;align-items:center;justify-content:center}
+.sheet{position:relative;width:960px;max-height:840px;overflow-y:auto;touch-action:pan-y;background:var(--paper);border-radius:26px;padding:34px 44px 28px;box-shadow:0 30px 60px -20px rgba(0,0,0,.6)}
+.sheet h2{font-size:40px;font-weight:700;margin-bottom:6px}
+.sheet .lead{font-size:22px;color:var(--ink-soft);margin-bottom:14px;line-height:1.4}
+.sheet-x{position:absolute;right:18px;top:16px;width:56px;height:56px;border:0;border-radius:50%;background:transparent;color:var(--ink-soft);display:grid;place-items:center}
+.sheet-x svg{width:30px;height:30px}
+.set-h{font-size:19px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--focus);margin:22px 0 2px}
+.set-row{display:flex;align-items:center;gap:20px;padding:12px 0;border-top:2px solid var(--paper-edge)}
+.set-row.top{align-items:flex-start}
+.set-row > div:first-child{width:290px;flex:none}
+.set-row > div.grow{flex:1;min-width:0}
+.set-row b{display:block;font-size:24px;font-weight:600}
+.set-row small{display:block;font-size:17px;color:var(--ink-soft);line-height:1.3;margin-top:2px}
+.set-row .seg{flex-wrap:wrap}
+.set-row .seg button{font-size:21px;padding:8px 18px}
+.set-row .seg.voices{border-radius:24px;display:flex}
+.seg.voices .vg{font-size:15px;margin-left:8px;opacity:.7}
+.voice-test{display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap}
+.voice-test .btn{font-size:22px;padding:8px 22px}
+.voice-test .info{margin-top:0}
+.voice-test .info b{display:inline;font-size:inherit}
+.info{font-size:18px;color:var(--ink-soft);margin-top:6px;line-height:1.35}
+.info.warn{color:var(--bad)}
+.sheet-foot{display:flex;justify-content:flex-end;gap:14px;margin-top:22px;align-items:center}
+#toast{position:absolute;left:800px;bottom:130px;z-index:60;transform:translate(-50%,20px);background:#2A2620;color:#FFF8EC;font-size:24px;font-weight:500;
+  padding:12px 28px;border-radius:999px;opacity:0;transition:opacity .2s,transform .25s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#stage[data-screen="draw"] #toast{bottom:auto;top:104px;transform:translate(-50%,-20px)}
+#stage[data-screen="draw"] #toast.show{transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+
+<div id="stage" data-screen="home">
+  <section id="home" aria-label="Ana menü">
+    <div class="h-top">
+      <div class="h-logo" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M12 70c10-22 18-22 26 0s16 22 24 0 16-22 26 0" fill="none" stroke="#24272B" stroke-width="5" stroke-linecap="round" stroke-dasharray="9 7"/><path d="M12 70c10-22 18-22 26 0s10 18 16 10" fill="none" stroke="#E53935" stroke-width="9" stroke-linecap="round"/><g transform="rotate(38 62 34)"><rect x="54" y="2" width="16" height="44" rx="3" fill="#FFC531"/><rect x="54" y="2" width="16" height="9" rx="3" fill="#F48FB1"/><rect x="54" y="11" width="16" height="4" fill="#B8C2CC"/><path d="M54 46h16l-8 14z" fill="#F3D3A6"/><path d="M59.5 55h5l-2.5 5z" fill="#E53935"/></g></svg></div>
+      <div class="h-title"><h1>Çizgi Takibi</h1><p>Bir desen seç. Çizginin üzerinden geç, sonra istersen boya.</p></div>
+      <div class="h-side">
+        <div class="chip h-lay"><span>Tahtada kaç<br>çocuk çizecek?</span><div class="seg" id="laySeg" role="group" aria-label="Tahtadaki çocuk sayısı"></div></div>
+        <div class="h-acts"><a class="btn plain h-set" id="listBtn" href="../index.html" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Oyun listesi</a><button type="button" class="btn plain h-set" id="setBtn"></button></div>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="draw" aria-label="Çizim">
+    <div id="topbar"></div>
+    <div id="panels"></div>
+  </section>
+
+  <canvas id="fx" width="1600" height="900" aria-hidden="true"></canvas>
+  <div id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* Akıllı tahtada iki çocuk aynı anda ters yönlere sürüklerken tarayıcı sayfayı yakınlaştırmasın. */
+(function () {
+  const stop = e => { if (e.cancelable && e.touches && e.touches.length > 1) e.preventDefault(); };
+  try { document.addEventListener('touchmove', stop, { passive: false }); } catch (e) {}
+  ['gesturestart', 'gesturechange'].forEach(t => document.addEventListener(t, e => e.preventDefault()));
+  /* Mac touchpad'de iki parmakla sıkıştırma (Chrome/Edge bunu Ctrl+tekerlek olarak gönderir) sayfayı büyütmesin. */
+  try { document.addEventListener('wheel', e => { if (e.ctrlKey && e.cancelable) e.preventDefault(); }, { passive: false }); } catch (e) {}
+})();
+/* =========================================================
+   Yardımcılar
+   ========================================================= */
+const W = 1600, H = 900;
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const upperTR = s => s.toLocaleUpperCase('tr-TR');
+const lowerTR = s => s.toLocaleLowerCase('tr-TR');
+const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const inClaude = !!(window.claude && typeof window.claude.use === 'function');
+const canBlob = typeof Blob === 'function' && !!(window.URL && URL.createObjectURL);
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+};
+const LS_SET = 'cizgi-takibi:ayarlar:v1';
+const DEFAULTS = { road: 'mid', line: 'dash', marks: true, sound: true, music: false, voice: '', ttsRate: 'normal', layout: 1 };
+let settings = Object.assign({}, DEFAULTS, store.get(LS_SET, {}) || {});
+if (['wide', 'mid', 'thin'].indexOf(settings.road) < 0) settings.road = 'mid';
+if (['dash', 'solid'].indexOf(settings.line) < 0) settings.line = 'dash';
+if ([1, 2, 4].indexOf(+settings.layout) < 0) settings.layout = 1;
+settings.layout = +settings.layout; settings.music = false;
+if (typeof settings.voice !== 'string') settings.voice = '';
+if (['slow', 'normal', 'fast'].indexOf(settings.ttsRate) < 0) settings.ttsRate = 'normal';
+function saveSettings() { store.set(LS_SET, settings); updateSoundBtn(); }
+
+const stage = $('#stage');
+let scale = 1;
+function fit() {
+  scale = Math.min(window.innerWidth / W, window.innerHeight / H) || 1;
+  stage.style.transform = `scale(${scale})`;
+}
+fit();
+stage.addEventListener('scroll', () => { stage.scrollLeft = 0; stage.scrollTop = 0; });
+
+/* ---------- Simgeler ---------- */
+const I = (d, sw) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw || 2.4}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  home: I('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-6h4v6"/>', 2.3),
+  prev: I('<path d="m15 5-7 7 7 7"/>', 3),
+  next: I('<path d="m9 5 7 7-7 7"/>', 3),
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  trash: I('<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/>', 2.2),
+  save: I('<path d="M12 4v11M7 10.5 12 15.5l5-5"/><path d="M5 19.5h14"/>', 2.6),
+  gear: I('<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>', 2.2),
+  soundOn: I('<path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>', 2.2),
+  soundOff: I('<path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path d="m22 9-6 6M16 9l6 6"/>', 2.2),
+  close: I('<path d="M6 6l12 12M18 6 6 18"/>', 2.6),
+  undo: I('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>', 2.6),
+  star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z" fill="currentColor"/></svg>'
+};
+const TOOL_SVG = {
+  brush: '<svg viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(40 24 24)"><rect x="20.5" y="2" width="7" height="24" rx="3.5" fill="#C98A4B"/><rect x="19.5" y="24" width="9" height="7" rx="1.5" fill="#AEB8C2"/><path d="M19.5 31h9c0 6-2 11-4.5 14-2.5-3-4.5-8-4.5-14z" fill="var(--cur)" stroke="rgba(0,0,0,.25)" stroke-width="1.2"/></g></svg>',
+  sponge: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="20" y="3" width="8" height="20" rx="4" fill="#C98A4B"/><ellipse cx="24" cy="34" rx="15" ry="11" fill="#FFD54F" stroke="#E0A800" stroke-width="1.5"/><path d="M10 37q14 9 28 0v3q-14 9-28 0z" fill="var(--cur)"/><g fill="#E0A800" opacity=".7"><circle cx="18" cy="31" r="1.6"/><circle cx="26" cy="29" r="1.3"/><circle cx="31" cy="33" r="1.6"/><circle cx="22" cy="35" r="1.2"/></g></svg>',
+  fill: '<svg viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(-20 22 26)"><path d="M9 18h26l-3 24H12z" fill="#B8C2CC" stroke="#7D8893" stroke-width="2" stroke-linejoin="round"/><path d="M9 18h26" stroke="#7D8893" stroke-width="3"/><path d="M12 14q10-10 20 0" fill="none" stroke="#7D8893" stroke-width="2.4"/><path d="M10 20h24l-1 6q-11 4-22 0z" fill="var(--cur)"/></g><path d="M39 26q4 7 0 11q-4-4 0-11z" fill="var(--cur)" stroke="rgba(0,0,0,.2)"/></svg>',
+  eraser: '<svg viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(-35 24 24)"><rect x="8" y="16" width="32" height="16" rx="4" fill="#F48FB1"/><rect x="8" y="16" width="12" height="16" rx="4" fill="#E9EEF3"/><rect x="16" y="16" width="4" height="16" fill="#C9D3DC"/></g></svg>'
+};
+const TOOLS = [['brush', 'Fırça'], ['sponge', 'Sünger'], ['fill', 'Boya'], ['eraser', 'Silgi']];
+const COLORS = [
+  ['#E53935', 'Kırmızı'], ['#FB8C00', 'Turuncu'], ['#FDD835', 'Sarı'], ['#8BC34A', 'Açık yeşil'], ['#2E9D4F', 'Yeşil'], ['#00ACC1', 'Turkuaz'], ['#1E88E5', 'Mavi'],
+  ['#303F9F', 'Lacivert'], ['#8E24AA', 'Mor'], ['#EC407A', 'Pembe'], ['#8D5524', 'Kahverengi'], ['#263238', 'Siyah'], ['rb', 'Gökkuşağı']
+];
+const NUM_COL = ['#E53935', '#1E88E5', '#2E9D4F', '#8E24AA'];
+
+/* =========================================================
+   Ses: efektler ve seslendirme (diğer oyunlarla aynı motor)
+   ========================================================= */
+/*@@SHARED_AUDIO@@*/
+
+/* =========================================================
+   Desenler: her desen verilen kâğıt boyutuna göre yeniden çizilir
+   ========================================================= */
+const ROAD = { wide: 66, mid: 50, thin: 34 };
+function polyLen(p) { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L; }
+function resample(p, step) {
+  if (p.length < 2) return p.slice();
+  const out = [p[0].slice()];
+  let carry = 0;
+  for (let i = 1; i < p.length; i++) {
+    const a = p[i - 1], b = p[i], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (!d) continue;
+    let t = step - carry;
+    while (t <= d) { out.push([a[0] + (b[0] - a[0]) * t / d, a[1] + (b[1] - a[1]) * t / d]); t += step; }
+    carry = d - (t - step);
+  }
+  const last = p[p.length - 1], q = out[out.length - 1];
+  if (Math.hypot(last[0] - q[0], last[1] - q[1]) > step * 0.3) out.push(last.slice());
+  return out;
+}
+function fn(f, t0, t1, n) { const o = []; for (let i = 0; i <= n; i++) o.push(f(t0 + (t1 - t0) * i / n)); return o; }
+const ST = (pts, closed) => ({ pts, closed: !!closed });
+function rowsOf(h, m, minRow, max, w) { const want = Math.max(minRow, ((w || 0) - 2 * m) * 0.55); return clamp(Math.round((h - 2 * m) / want), 1, max); }
+function rowCenters(h, m, rows) { const a = h - 2 * m; return Array.from({ length: rows }, (_, i) => m + a * (i + 0.5) / rows); }
+const TPLS = [
+  { id: 'duz', name: 'Düz çizgiler', build(w, h, r, m) {
+    const rows = clamp(Math.floor((h - 2 * m) / (r * 2.6)) + 1, 2, 4), sp = Math.min((h - 2 * m) / Math.max(1, rows - 1), r * 3.4);
+    return Array.from({ length: rows }, (_, i) => { const y = h / 2 + (i - (rows - 1) / 2) * sp; return ST([[m, y], [w - m, y]]); });
+  } },
+  { id: 'zikzak', name: 'Zikzak', build(w, h, r, m) {
+    const rows = rowsOf(h, m, 180, 3, w), cs = rowCenters(h, m, rows), rh = (h - 2 * m) / rows, A = clamp(rh - r * 1.3, r * 1.4, 300);
+    const aw = w - 2 * m, n = clamp(Math.round(aw / Math.max(r * 1.6, A * 0.58)), 2, 12), dx = aw / n;
+    return cs.map(c => ST(Array.from({ length: n + 1 }, (_, i) => [m + i * dx, c + (i % 2 ? -A / 2 : A / 2)])));
+  } },
+  { id: 'dalga', name: 'Dalgalı çizgi', build(w, h, r, m) {
+    const rows = rowsOf(h, m, 180, 3, w), cs = rowCenters(h, m, rows), rh = (h - 2 * m) / rows, A = clamp(rh - r * 1.3, r * 1.4, 300);
+    const aw = w - 2 * m, per = clamp(Math.round(aw / (A * 1.5)), 1, 6);
+    return cs.map(c => ST(fn(t => [m + aw * t, c - A / 2 * Math.sin(t * per * 2 * Math.PI)], 0, 1, per * 60)));
+  } },
+  { id: 'halka', name: 'Halkalı çizgi', build(w, h, r, m) {
+    const rows = rowsOf(h, m, 210, 2, w), cs = rowCenters(h, m, rows), rh = (h - 2 * m) / rows, A = clamp(rh - r * 1.2, r * 2.2, 360);
+    const aw = w - 2 * m, B = 2.2;
+    let N = clamp(Math.round(aw / (A * 1.25)), 1, 6), s = aw / (2 * Math.PI * N + 2 * (B - 1));
+    if (s * 2 * B > A) s = A / (2 * B);
+    const span = s * (2 * Math.PI * N), x0 = w / 2 - span / 2 + Math.PI * s;
+    return cs.map(c => ST(fn(t => [x0 + s * (t - B * Math.sin(t)), c - s * B * Math.cos(t)], -Math.PI, 2 * Math.PI * N - Math.PI, N * 90)));
+  } },
+  { id: 'kare', name: 'Kare dalga', build(w, h, r, m) {
+    const rows = rowsOf(h, m, 180, 3, w), cs = rowCenters(h, m, rows), rh = (h - 2 * m) / rows, A = clamp(rh - r * 1.3, r * 1.6, 300);
+    const aw = w - 2 * m, n = clamp(Math.round(aw / Math.max(r * 2.5, A * 0.6)), 2, 14), tw = aw / n;
+    return cs.map(c => { const yb = c + A / 2, yt = c - A / 2, p = [[m, yb]]; for (let i = 0; i < n; i++) { const up = i % 2 === 0, x = m + i * tw; p.push([x, up ? yt : yb], [x + tw, up ? yt : yb]); } p.push([m + n * tw, n % 2 ? yb : yt]); return ST(p); });
+  } },
+  { id: 'sarmal', name: 'Sarmal', build(w, h, r, m) {
+    const ry = Math.min(w, h) / 2 - m, k = clamp((w - 2 * m) / (h - 2 * m), 1, 1.5), gap = r * 1.9;
+    const turns = clamp(Math.floor((ry - r * 0.7) / gap), 1, 5) + 0.25, cx = w / 2, cy = h / 2, T = turns * 2 * Math.PI;
+    return [ST(fn(th => { const rr = ry - gap * th / (2 * Math.PI); return [cx - rr * k * Math.cos(th), cy - rr * Math.sin(th)]; }, 0, T, Math.round(turns * 140)))];
+  } },
+  { id: 'ucgen', name: 'İç içe üçgenler', build(w, h, r, m) {
+    const ah = h - 2 * m, aw = w - 2 * m;
+    const rho1 = Math.min(ah / 3, aw / (2 * Math.sqrt(3))), gap = r * 1.9, cx = w / 2, cy = m + (ah - 3 * rho1) / 2 + 2 * rho1, out = [];
+    for (let rho = rho1; rho >= r * 0.75 && out.length < 3; rho -= gap) {
+      const L = [cx - Math.sqrt(3) * rho, cy + rho], T = [cx, cy - 2 * rho], R = [cx + Math.sqrt(3) * rho, cy + rho];
+      out.push(ST([L, T, R, L.slice()], true));
+    }
+    return out;
+  } },
+  { id: 'gokkusagi', name: 'Gökkuşağı', base: true, build(w, h, r, m) {
+    const R = Math.min((w - 2 * m) / 2, h - 2 * m - r * 0.2), cx = w / 2, cy = h - m - Math.max(0, (h - 2 * m - R) / 2), gap = r * 1.75, out = [];
+    for (let rr = R; rr >= r * 1.1 && out.length < 6; rr -= gap) out.push(ST(fn(t => [cx + rr * Math.cos(t), cy + rr * Math.sin(t)], Math.PI, 2 * Math.PI, 120)));
+    return out;
+  } },
+  { id: 'daire', name: 'Daireler', build(w, h, r, m) {
+    const aw = w - 2 * m, ah = h - 2 * m, gap = r * 1.9, many = aw > ah * 2.2;
+    const groups = many ? [[m + aw * 0.25, h / 2], [m + aw * 0.75, h / 2]] : [[w / 2, h / 2]];
+    const R = many ? Math.min(ah / 2, aw / 4 - r) : Math.min(aw, ah) / 2, out = [];
+    groups.forEach(([cx, cy]) => { for (let rr = R; rr >= r * 0.8 && out.length < 6; rr -= gap) out.push(ST(fn(t => [cx + rr * Math.sin(t), cy - rr * Math.cos(t)], 0, 2 * Math.PI, 140), true)); });
+    return out;
+  } },
+  { id: 'sekil', name: 'İç içe şekiller', build(w, h, r, m) {
+    const aw = w - 2 * m, ah = h - 2 * m, gap = r * 1.8;
+    const rw = Math.min(aw, ah * 1.9), rh = Math.min(ah, aw * 1.9), x0 = w / 2 - rw / 2, y0 = h / 2 - rh / 2;
+    const rect = ST([[x0, y0], [x0 + rw, y0], [x0 + rw, y0 + rh], [x0, y0 + rh], [x0, y0]], true);
+    const sq = Math.min(rw, rh) - 2 * gap, sx = w / 2 - sq / 2, sy = h / 2 - sq / 2;
+    const out = [rect];
+    if (sq > r * 2.5) out.push(ST([[sx, sy], [sx + sq, sy], [sx + sq, sy + sq], [sx, sy + sq], [sx, sy]], true));
+    const cr = sq / 2 - gap;
+    if (cr > r * 0.8) out.push(ST(fn(t => [w / 2 + cr * Math.sin(t), h / 2 - cr * Math.cos(t)], 0, 2 * Math.PI, 140), true));
+    return out;
+  } },
+  { id: 'bos', name: 'Boş kâğıt', build() { return []; } }
+];
+const TPL = id => TPLS.find(t => t.id === id) || TPLS[0];
+const MIX = 'karisik';
+function buildTpl(id, w, h, road) {
+  const m = Math.round(Math.max(road * 0.75, 16) + 18);
+  const strokes = TPL(id).build(w, h, road, m).map(s => { const pts = resample(s.pts, 3); return { pts, closed: s.closed, len: polyLen(pts) }; }).filter(s => s.pts.length > 1);
+  return strokes;
+}
+const pathD = pts => 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
+function thumbSVG(id, w, h) {
+  if (id === 'bos') return `<svg class="th" viewBox="0 0 ${w} ${h}" aria-hidden="true"></svg>`;
+  const s = buildTpl(id, w, h, ROAD[settings.road]);
+  return `<svg class="th" viewBox="0 0 ${w} ${h}" aria-hidden="true">${s.map(x => `<path d="${pathD(x.pts)}" fill="none" stroke="#24272B" stroke-width="${Math.max(6, w / 150)}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</svg>`;
+}
+
+/* =========================================================
+   Sünger dokusu
+   ========================================================= */
+const SPONGE = (() => {
+  const base = [], rng = mulberry(7);
+  for (let v = 0; v < 4; v++) {
+    const c = document.createElement('canvas'); c.width = c.height = 96;
+    const x = c.getContext('2d');
+    x.fillStyle = '#000';
+    for (let i = 0; i < 520; i++) {
+      const a = rng() * Math.PI * 2, d = Math.pow(rng(), 0.6) * 44, rr = 1.2 + rng() * 4.2;
+      x.globalAlpha = 0.25 + rng() * 0.6 * (1 - d / 60);
+      x.beginPath(); x.arc(48 + Math.cos(a) * d, 48 + Math.sin(a) * d, rr, 0, Math.PI * 2); x.fill();
+    }
+    base.push(c);
+  }
+  const cache = new Map();
+  return {
+    get(col, v) {
+      const k = col + '|' + v;
+      let c = cache.get(k);
+      if (!c) {
+        c = document.createElement('canvas'); c.width = c.height = 96;
+        const x = c.getContext('2d');
+        x.drawImage(base[v], 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, 96, 96);
+        if (cache.size > 160) cache.clear();
+        cache.set(k, c);
+      }
+      return c;
+    }
+  };
+})();
+
+/* =========================================================
+   Panel: bir kâğıt, katmanları, araçları ve iz takibi
+   ========================================================= */
+let panels = [], layout = 1;
+const res = () => clamp(scale * (window.devicePixelRatio || 1), 1, 2.5);
+function roadFor(n) { return Math.round(ROAD[settings.road] * (n === 4 ? 0.78 : n === 2 ? 0.9 : 1)); }
+const SIZES = [0.32, 0.56, 0.86];
+
+function Panel(i, rect, tplId) {
+  const p = { i, rect, tplId, color: [0, 6, 4, 9][i % 4], tool: 'brush', size: 1, actions: [], live: new Map(), done: false, demoRaf: 0, armT: 0 };
+  const el = document.createElement('div'); el.className = 'pn'; p.el = el;
+  Object.assign(el.style, { left: rect.x + 'px', top: rect.y + 'px', width: rect.w + 'px', height: rect.h + 'px' });
+  const multi = layout > 1, tbH = layout === 1 ? 104 : layout === 2 ? 142 : 196, headH = multi ? 56 : 0;
+  p.pw = Math.round(rect.w); p.ph = Math.round(rect.h - headH - tbH - 12);
+  el.innerHTML = (multi ? `<div class="pn-head"><span class="pn-no" style="--c:${NUM_COL[i % 4]}">${i + 1}</span>
+      <div class="chip pn-tpl"><button type="button" class="ar" data-a="prev" aria-label="Önceki desen">${ICON.prev}</button><span class="pn-name"></span><button type="button" class="ar" data-a="next" aria-label="Sonraki desen">${ICON.next}</button></div>
+      <button type="button" class="ibtn" data-a="demo" aria-label="Nasıl çizilir? Göster">${ICON.play}</button><button type="button" class="ibtn" data-a="clear" aria-label="Kâğıdı temizle">${ICON.trash}</button>
+      <div class="pn-bar"><i></i></div></div>` : '') +
+    `<div class="pp" style="left:0;top:${headH}px;width:${p.pw}px;height:${p.ph}px"><canvas class="cf"></canvas><svg class="gd" viewBox="0 0 ${p.pw} ${p.ph}"></svg><canvas class="ci"></canvas><svg class="mk" viewBox="0 0 ${p.pw} ${p.ph}"></svg>
+      <div class="cel" aria-live="polite"><span class="cs">${ICON.star + ICON.star + ICON.star}</span><span class="ct"><b></b><small></small></span><button type="button" class="btn plain" data-a="nextTpl">Yeni desen</button></div></div>` +
+    `<div class="tbar" style="height:${tbH}px">${toolbarHTML()}</div>`;
+  p.pp = $('.pp', el); p.cf = $('.cf', el); p.ci = $('.ci', el); p.gd = $('.gd', el); p.mk = $('.mk', el); p.cel = $('.cel', el); p.tb = $('.tbar', el);
+  p.fctx = p.cf.getContext('2d'); p.ictx = p.ci.getContext('2d');
+  bindPanel(p);
+  return p;
+}
+function toolbarHTML() {
+  const sw = COLORS.map(([c, n], k) => `<button type="button" class="sw${c === 'rb' ? ' rb' : ''}" data-col="${k}" style="--c:${c === 'rb' ? '#fff' : c}" aria-label="${n}" aria-pressed="false"></button>`).join('');
+  const tl = TOOLS.map(([t, n]) => `<button type="button" class="tool" data-tool="${t}" aria-label="${n}" aria-pressed="false">${TOOL_SVG[t]}<span>${n}</span></button>`).join('');
+  const undo = `<button type="button" class="tbtn" data-a="undo" aria-label="Geri al">${ICON.undo.replace('<svg', '<svg style="color:var(--ink)"')}<span>Geri al</span></button>`;
+  if (layout === 4) {
+    return `<div class="sws">${sw}</div><div class="row3"><div class="tls">${tl}</div><button type="button" class="tbtn size" data-a="size" aria-label="Kalınlık"><i></i></button>${undo}</div>`;
+  }
+  const sz = SIZES.map((_, k) => `<button type="button" class="tbtn size" data-size="${k}" aria-label="${['İnce', 'Orta', 'Kalın'][k]}" aria-pressed="false"><i></i></button>`).join('');
+  return `<div class="sws">${sw}</div><span class="sep"></span><div class="tls">${tl}</div><span class="sep"></span><div class="szs">${sz}</div>${undo}`;
+}
+function colorOf(p) { return COLORS[p.color][0]; }
+function sizePx(p) { return Math.max(6, Math.round(p.road * SIZES[p.size])); }
+function syncTools(p) {
+  const c = colorOf(p);
+  p.tb.style.setProperty('--cur', c === 'rb' ? '#E53935' : c);
+  p.tb.classList.toggle('rb', c === 'rb');
+  p.tb.querySelectorAll('[data-col]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.col === p.color)));
+  p.tb.querySelectorAll('[data-tool]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tool === p.tool)));
+  const scaleDot = k => Math.round(clamp(p.road * SIZES[k], 6, 60) * (layout === 4 ? 0.62 : 0.7));
+  p.tb.querySelectorAll('[data-size]').forEach(b => { const k = +b.dataset.size, d = scaleDot(k); b.setAttribute('aria-pressed', String(k === p.size)); const i = b.querySelector('i'); i.style.width = i.style.height = d + 'px'; });
+  const cyc = p.tb.querySelector('[data-a="size"] i'); if (cyc) { const d = scaleDot(p.size); cyc.style.width = cyc.style.height = d + 'px'; }
+  const sb = p.tb.querySelector('[data-a="size"]'); if (sb) sb.setAttribute('aria-label', `Kalınlık: ${['ince', 'orta', 'kalın'][p.size]}`);
+  p.tb.querySelectorAll('[data-size]').forEach(b => b.classList.toggle('tool', false));
+  p.tb.querySelectorAll('[data-size]').forEach(b => b.style.boxShadow = +b.dataset.size === p.size ? '0 0 0 4px var(--ink),0 4px 0 4px var(--ink)' : '');
+  const u = p.tb.querySelector('[data-a="undo"]'); if (u) u.disabled = !p.actions.length;
+}
+
+/* ---------- Desen yükleme ---------- */
+function setTemplate(p, id, quiet) {
+  stopDemo(p);
+  p.tplId = id; p.road = roadFor(layout);
+  p.strokes = buildTpl(id, p.pw, p.ph, p.road);
+  p.actions = []; p.baseF = p.baseI = null; p.live.clear(); p.done = false; p.inside = 0; p.outside = 0;
+  p.pp.classList.toggle('solid', settings.line === 'solid');
+  p.pp.classList.toggle('nomarks', !settings.marks);
+  drawGuide(p); buildMask(p); buildChecks(p);
+  sizeCanvases(p, true);
+  hideCel(p);
+  const nm = p.el.querySelector('.pn-name'); if (nm) { nm.textContent = TPL(id).name; nm.classList.remove('armed'); }
+  syncTools(p); updateProgress(p);
+  if (!quiet) speakTpl(p);
+}
+function drawGuide(p) {
+  const r = p.road, dash = settings.line === 'solid' ? '' : ` stroke-dasharray="${(r * 0.34).toFixed(1)} ${(r * 0.26).toFixed(1)}"`;
+  const lw = settings.line === 'solid' ? Math.max(4, r * 0.11) : Math.max(3, r * 0.085);
+  p.gd.innerHTML = p.strokes.map(s => `<path class="road" d="${pathD(s.pts)}${s.closed ? 'Z' : ''}" stroke-width="${r}"/>`).join('') +
+    p.strokes.map(s => `<path class="line" d="${pathD(s.pts)}${s.closed ? 'Z' : ''}" stroke-width="${lw.toFixed(1)}"${dash}/>`).join('');
+  const R = clamp(r * 0.4, 13, 24);
+  p.mk.innerHTML = p.strokes.map((s, k) => {
+    const a = s.pts[0], b = s.pts[Math.min(s.pts.length - 1, 6)], ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+    const e = s.pts[s.pts.length - 1];
+    return `<g class="st${k === 0 ? ' pulse' : ''}" data-s="${k}" transform="translate(${a[0].toFixed(1)} ${a[1].toFixed(1)})"><circle r="${R}"/><g class="arw" transform="rotate(${ang.toFixed(1)})"><path d="M${(-R * 0.5).toFixed(1)} 0H${(R * 0.42).toFixed(1)}M${(R * 0.02).toFixed(1)} ${(-R * 0.42).toFixed(1)}L${(R * 0.46).toFixed(1)} 0L${(R * 0.02).toFixed(1)} ${(R * 0.42).toFixed(1)}" stroke-width="${(R * 0.2).toFixed(1)}"/></g><path class="ok" d="M${-R * 0.45} 0l${R * 0.32} ${R * 0.32}l${R * 0.55} ${-R * 0.6}"/></g>` +
+      (s.closed ? '' : `<g class="en" data-e="${k}" transform="translate(${e[0].toFixed(1)} ${e[1].toFixed(1)})"><path d="${starPath(R * 1.05)}"/></g>`);
+  }).join('') + '<g class="demo-g"></g>';
+}
+function starPath(R) {
+  let d = '';
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? R * 0.46 : R; d += (i ? 'L' : 'M') + (Math.cos(a) * rr).toFixed(1) + ' ' + (Math.sin(a) * rr).toFixed(1); }
+  return d + 'z';
+}
+/* Boya kovası için sınır: desenin ana çizgileri. Kova, çizgilerle çevrili alanı boyar. */
+function buildMask(p) {
+  const w = p.pw, h = p.ph, c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  x.strokeStyle = '#000'; x.lineWidth = 3; x.lineJoin = 'round'; x.lineCap = 'round';
+  p.strokes.forEach(s => { x.beginPath(); s.pts.forEach((q, k) => k ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1])); if (s.closed) x.closePath(); x.stroke(); });
+  /* Gökkuşağının altı açık; görünmez bir zemin çizgisi her bandı ayrı boyanabilir yapar. */
+  if (TPL(p.tplId).base && p.strokes.length) { const o = p.strokes[0].pts, a = o[0], b = o[o.length - 1]; x.beginPath(); x.moveTo(a[0], a[1]); x.lineTo(b[0], b[1]); x.stroke(); }
+  const d = x.getImageData(0, 0, w, h).data, m = new Uint8Array(w * h);
+  for (let k = 0; k < m.length; k++) m[k] = d[k * 4 + 3] > 60 ? 1 : 0;
+  p.mask = m;
+}
+/* İz takibi: çizginin üzerine eşit aralıklı kontrol noktaları konur; fırça bunların yakınından geçtikçe dolarlar. */
+function buildChecks(p) {
+  const cps = [], grid = new Map(), C = 32;
+  p.strokes.forEach((s, k) => resample(s.pts, 12).forEach(q => { cps.push({ x: q[0], y: q[1], s: k }); }));
+  cps.forEach((c, idx) => { const key = Math.floor(c.x / C) + ',' + Math.floor(c.y / C); let a = grid.get(key); if (!a) grid.set(key, a = []); a.push(idx); });
+  p.cps = cps; p.grid = grid; p.hit = new Uint8Array(cps.length);
+  p.sTot = p.strokes.map((_, k) => cps.filter(c => c.s === k).length); p.sHit = p.strokes.map(() => 0); p.sDone = p.strokes.map(() => false);
+}
+function nearCps(p, x, y, rad, cb) {
+  const C = 32, x0 = Math.floor((x - rad) / C), x1 = Math.floor((x + rad) / C), y0 = Math.floor((y - rad) / C), y1 = Math.floor((y + rad) / C);
+  for (let gx = x0; gx <= x1; gx++) for (let gy = y0; gy <= y1; gy++) { const a = p.grid.get(gx + ',' + gy); if (a) for (const idx of a) cb(idx); }
+}
+function traceAt(p, x, y, sz) {
+  if (!p.cps.length || p.done) return;
+  const tol = p.road / 2 + sz * 0.35, t2 = tol * tol;
+  let near = Infinity;
+  nearCps(p, x, y, tol + 12, idx => {
+    const c = p.cps[idx], d2 = (c.x - x) * (c.x - x) + (c.y - y) * (c.y - y);
+    if (d2 < near) near = d2;
+    if (d2 <= t2 && !p.hit[idx]) { p.hit[idx] = 1; p.sHit[c.s]++; }
+  });
+  const inTol = p.road / 2 + 10;
+  if (near <= inTol * inTol) p.inside++; else p.outside++;
+}
+function checkStrokes(p) {
+  let any = false;
+  p.strokes.forEach((s, k) => {
+    if (!p.sDone[k] && p.sHit[k] >= Math.ceil(p.sTot[k] * 0.9)) {
+      p.sDone[k] = true; any = true;
+      const st = p.mk.querySelector(`.st[data-s="${k}"]`); if (st) st.classList.add('done');
+      const en = p.mk.querySelector(`.en[data-e="${k}"]`); if (en) en.classList.add('done');
+      const nx = p.mk.querySelector(`.st[data-s="${k + 1}"]`); p.mk.querySelectorAll('.st.pulse').forEach(e => e.classList.remove('pulse')); if (nx) nx.classList.add('pulse');
+    }
+  });
+  if (any) sfx.ding();
+  updateProgress(p);
+  if (!p.done && p.strokes.length && p.sDone.every(Boolean)) celebrate(p);
+}
+function progressOf(p) { const t = p.cps.length; if (!t) return 0; let h = 0; for (let k = 0; k < p.hit.length; k++) h += p.hit[k]; return Math.min(1, h / t / 0.9); }
+function starsOf(p) { const a = p.inside / Math.max(1, p.inside + p.outside); return a >= 0.85 ? 3 : a >= 0.65 ? 2 : 1; }
+function updateProgress(p) {
+  const v = Math.round(progressOf(p) * 100);
+  const bar = p.el.querySelector('.pn-bar i'); if (bar) bar.style.width = v + '%';
+  if (layout === 1) renderTopProgress(p, v);
+}
+
+/* ---------- Tuval boyutu ve yeniden çizim ---------- */
+function sizeCanvases(p, force) {
+  const r = res();
+  if (!force && p.res && Math.abs(r - p.res) / p.res < 0.18) return;
+  p.res = r;
+  [p.cf, p.ci].forEach(c => { c.width = Math.round(p.pw * r); c.height = Math.round(p.ph * r); });
+  replay(p);
+}
+function ctxReset(x, r) { x.setTransform(r, 0, 0, r, 0, 0); x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; }
+function drawAction(p, a) {
+  if (a.t === 'fill') paintFill(p, a);
+  else { const st = strokeState(a); for (let k = 1; k < a.pts.length; k++) seg(p, a, st, a.pts[k - 1], a.pts[k]); if (a.pts.length === 1) dot(p, a, st, a.pts[0]); }
+}
+function replay(p) {
+  const r = p.res;
+  [[p.fctx, p.baseF], [p.ictx, p.baseI]].forEach(([x, base]) => {
+    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, x.canvas.width, x.canvas.height);
+    if (base) x.drawImage(base, 0, 0, x.canvas.width, x.canvas.height);
+    ctxReset(x, r);
+  });
+  p.actions.forEach(a => drawAction(p, a));
+}
+/* Uzun oturumda geri al yavaşlamasın: en eski 60 adım kâğıda sabitlenir, son adımlar geri alınabilir kalır. */
+function bake(p) {
+  if (p.actions.length <= 120 || p.live.size) return;
+  const n = 60, w = p.cf.width, h = p.cf.height, mk = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  if (!p.baseF || p.baseF.width !== w || p.baseF.height !== h) {
+    const nf = mk(), ni = mk();
+    if (p.baseF) { nf.getContext('2d').drawImage(p.baseF, 0, 0, w, h); ni.getContext('2d').drawImage(p.baseI, 0, 0, w, h); }
+    p.baseF = nf; p.baseI = ni;
+  }
+  const sf = p.fctx, si = p.ictx;
+  p.fctx = p.baseF.getContext('2d'); p.ictx = p.baseI.getContext('2d');
+  [p.fctx, p.ictx].forEach(x => ctxReset(x, p.res));
+  try { p.actions.slice(0, n).forEach(a => drawAction(p, a)); } finally { p.fctx = sf; p.ictx = si; }
+  p.actions = p.actions.slice(n);
+}
+
+/* ---------- Fırça, sünger, silgi ---------- */
+function strokeState(a) { return { rng: mulberry(a.seed), acc: 0, dist: 0 }; }
+function hueCol(a, st) { return `hsl(${Math.round((a.hue + st.dist * 0.45) % 360)},85%,52%)`; }
+function dot(p, a, st, q) {
+  if (a.tool === 'sponge') { dab(p, a, st, q[0], q[1]); return; }
+  const x = a.tool === 'eraser' ? null : p.ictx;
+  const draw = (c, col) => { c.beginPath(); c.arc(q[0], q[1], a.size / 2, 0, Math.PI * 2); c.fillStyle = col; c.fill(); };
+  if (a.tool === 'eraser') { [p.ictx, p.fctx].forEach(c => { c.globalCompositeOperation = 'destination-out'; draw(c, '#000'); c.globalCompositeOperation = 'source-over'; }); }
+  else draw(x, a.col === 'rb' ? hueCol(a, st) : a.col);
+}
+function seg(p, a, st, q0, q1) {
+  const d = Math.hypot(q1[0] - q0[0], q1[1] - q0[1]);
+  if (a.tool === 'sponge') {
+    const spc = Math.max(4, a.size * 0.42);
+    let t = spc - st.acc;
+    while (t <= d) { const k = t / d; dab(p, a, st, q0[0] + (q1[0] - q0[0]) * k, q0[1] + (q1[1] - q0[1]) * k); st.dist += spc; t += spc; }
+    st.acc = d - (t - spc);
+    return;
+  }
+  const line = (c, col, w) => { c.beginPath(); c.moveTo(q0[0], q0[1]); c.lineTo(q1[0], q1[1]); c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round'; c.stroke(); };
+  if (a.tool === 'eraser') { [p.ictx, p.fctx].forEach(c => { c.globalCompositeOperation = 'destination-out'; line(c, '#000', a.size); c.globalCompositeOperation = 'source-over'; }); }
+  else line(p.ictx, a.col === 'rb' ? hueCol(a, st) : a.col, a.size);
+  st.dist += d;
+}
+function dab(p, a, st, x, y) {
+  const v = Math.floor(st.rng() * 4), rot = st.rng() * Math.PI * 2, s = a.size * (1.05 + st.rng() * 0.25);
+  let col = a.col;
+  if (col === 'rb') col = `hsl(${Math.round((a.hue + st.dist * 0.45) % 360 / 30) * 30},85%,52%)`;
+  const c = p.ictx;
+  c.save(); c.translate(x, y); c.rotate(rot); c.drawImage(SPONGE.get(col, v), -s / 2, -s / 2, s, s); c.restore();
+}
+
+/* ---------- Boya kovası ---------- */
+function regionSpans(p, sx, sy) {
+  const w = p.pw, h = p.ph, m = p.mask;
+  let x0 = Math.round(sx), y0 = Math.round(sy);
+  if (x0 < 0 || y0 < 0 || x0 >= w || y0 >= h) return null;
+  if (m[y0 * w + x0]) {
+    let best = null, bd = Infinity;
+    for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) { const x = x0 + dx, y = y0 + dy; if (x >= 0 && y >= 0 && x < w && y < h && !m[y * w + x] && dx * dx + dy * dy < bd) { bd = dx * dx + dy * dy; best = [x, y]; } }
+    if (!best) return null; [x0, y0] = best;
+  }
+  const seen = new Uint8Array(w * h), spans = [], stack = [x0, y0];
+  while (stack.length) {
+    const y = stack.pop(), x = stack.pop();
+    let l = x, r = x, row = y * w;
+    if (seen[row + x] || m[row + x]) continue;
+    while (l > 0 && !m[row + l - 1] && !seen[row + l - 1]) l--;
+    while (r < w - 1 && !m[row + r + 1] && !seen[row + r + 1]) r++;
+    for (let k = l; k <= r; k++) seen[row + k] = 1;
+    spans.push(y, l, r);
+    for (const ny of [y - 1, y + 1]) {
+      if (ny < 0 || ny >= h) continue;
+      const nr = ny * w;
+      let k = l;
+      while (k <= r) {
+        while (k <= r && (m[nr + k] || seen[nr + k])) k++;
+        if (k > r) break;
+        stack.push(k, ny);
+        while (k <= r && !m[nr + k] && !seen[nr + k]) k++;
+      }
+    }
+  }
+  return new Int32Array(spans);
+}
+function paintFill(p, a) {
+  const w = p.pw, h = p.ph, sp = a.spans;
+  if (!sp || !sp.length) return;
+  const img = new ImageData(w, h), d = img.data;
+  let rgb = null;
+  if (a.col !== 'rb') { const t = a.col.replace('#', ''); rgb = [parseInt(t.slice(0, 2), 16), parseInt(t.slice(2, 4), 16), parseInt(t.slice(4, 6), 16)]; }
+  const put = (k, x, y) => {
+    let c = rgb;
+    if (!c) c = hsl2rgb(((x + y) * 0.35 + a.hue) % 360, 0.85, 0.55);
+    d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 255;
+  };
+  for (let s = 0; s < sp.length; s += 3) {
+    const y = sp[s], l = sp[s + 1], r = sp[s + 2];
+    for (let x = Math.max(0, l - 2); x <= Math.min(w - 1, r + 2); x++) put((y * w + x) * 4, x, y);
+    for (const yy of [y - 1, y - 2, y + 1, y + 2]) if (yy >= 0 && yy < h) for (let x = l; x <= r; x++) { const k = (yy * w + x) * 4; if (!d[k + 3] && p.mask[yy * w + x]) put(k, x, yy); }
+  }
+  const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').putImageData(img, 0, 0);
+  p.fctx.save(); p.fctx.setTransform(p.res, 0, 0, p.res, 0, 0); p.fctx.globalCompositeOperation = 'source-over'; p.fctx.imageSmoothingEnabled = true; p.fctx.drawImage(c, 0, 0, w, h); p.fctx.restore();
+}
+function hsl2rgb(hh, s, l) {
+  const k = n => (n + hh / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+}
+
+/* ---------- Dokunma ---------- */
+function localPt(p, e) {
+  const r = p.pp.getBoundingClientRect();
+  return [(e.clientX - r.left) / r.width * p.pw, (e.clientY - r.top) / r.height * p.ph];
+}
+function bindPanel(p) {
+  p.pp.addEventListener('pointerdown', e => {
+    if (e.button !== undefined && e.button > 0) return;
+    if (e.target.closest('.cel')) return;
+    e.preventDefault();
+    audio.get();
+    stopDemo(p);
+    if (p.cel.classList.contains('on') && p.live.size === 0) hideCel(p, true);
+    const q = localPt(p, e);
+    if (p.tool === 'fill') {
+      const spans = regionSpans(p, q[0], q[1]); if (!spans) return;
+      const a = { t: 'fill', col: colorOf(p), hue: Math.round(rand(0, 360)), spans };
+      p.actions.push(a); paintFill(p, a); sfx.blub(); bake(p); syncTools(p);
+      return;
+    }
+    try { p.pp.setPointerCapture(e.pointerId); } catch (_) {}
+    const a = { t: 's', tool: p.tool, col: colorOf(p), size: p.tool === 'eraser' ? Math.round(sizePx(p) * 1.6) : p.tool === 'sponge' ? Math.round(sizePx(p) * 1.25) : sizePx(p), seed: (Math.random() * 1e9) | 0, hue: Math.round(rand(0, 360)), pts: [q] };
+    const st = strokeState(a);
+    p.live.set(e.pointerId, { a, st });
+    p.actions.push(a);
+    dot(p, a, st, q);
+    if (a.tool !== 'eraser') traceAt(p, q[0], q[1], a.size);
+    syncTools(p);
+  });
+  const move = e => {
+    const L = p.live.get(e.pointerId); if (!L) return;
+    const evs = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : null;
+    (evs && evs.length ? evs : [e]).forEach(ev => {
+      const q = localPt(p, ev), a = L.a, last = a.pts[a.pts.length - 1];
+      const d = Math.hypot(q[0] - last[0], q[1] - last[1]);
+      if (d < 1.2) return;
+      a.pts.push(q); seg(p, a, L.st, last, q);
+      if (a.tool !== 'eraser') { const n = Math.ceil(d / 5); for (let k = 1; k <= n; k++) traceAt(p, last[0] + (q[0] - last[0]) * k / n, last[1] + (q[1] - last[1]) * k / n, a.size); }
+    });
+    const now = performance.now();
+    if (L.a.tool !== 'eraser' && now - (p.chkAt || 0) > 140) { p.chkAt = now; checkStrokes(p); }
+  };
+  const end = e => {
+    const L = p.live.get(e.pointerId); if (!L) return;
+    p.live.delete(e.pointerId);
+    if (L.a.tool !== 'eraser') checkStrokes(p);
+    bake(p);
+  };
+  p.pp.addEventListener('pointermove', move);
+  p.pp.addEventListener('pointerup', end);
+  p.pp.addEventListener('pointercancel', end);
+  p.pp.addEventListener('lostpointercapture', end);
+  p.tb.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    audio.get();
+    if (b.dataset.col != null) { p.color = +b.dataset.col; if (p.tool === 'eraser') p.tool = 'brush'; sfx.pick(); }
+    else if (b.dataset.tool) { p.tool = b.dataset.tool; sfx.pick(); }
+    else if (b.dataset.size != null) { p.size = +b.dataset.size; if (p.tool === 'fill') p.tool = 'brush'; sfx.pick(); }
+    else if (b.dataset.a === 'size') { p.size = (p.size + 1) % 3; sfx.pick(); }
+    else if (b.dataset.a === 'undo') { undo(p); }
+    syncTools(p);
+  });
+  p.el.addEventListener('click', e => {
+    const b = e.target.closest('[data-a]'); if (!b || p.tb.contains(b)) return;
+    const k = b.dataset.a;
+    if (k === 'prev' || k === 'next') stepTpl(p, k === 'next' ? 1 : -1, p.el.querySelector('.pn-name'));
+    else if (k === 'demo') { audio.get(); startDemo(p); }
+    else if (k === 'clear') armClear(b, () => clearPanel(p));
+    else if (k === 'nextTpl') { hideCel(p, true); setTemplate(p, nextId(p.tplId, 1)); if (layout === 1) renderTopbar(); }
+  });
+}
+function undo(p) {
+  if (p.live.size || !p.actions.length) return;
+  p.actions.pop(); replay(p); sfx.flip();
+}
+function clearPanel(p) { setTemplate(p, p.tplId, true); sfx.flip(); }
+function armClear(btn, go) {
+  if (!btn.classList.contains('armed')) {
+    btn.classList.add('armed'); const old = btn.getAttribute('aria-label');
+    btn.setAttribute('aria-label', 'Silmek için tekrar dokun');
+    toast('Silmek için tekrar dokun.');
+    clearTimeout(btn._t); btn._t = setTimeout(() => { btn.classList.remove('armed'); btn.setAttribute('aria-label', old); }, 3200);
+    return;
+  }
+  clearTimeout(btn._t); btn.classList.remove('armed');
+  go();
+}
+const ORDER_IDS = TPLS.map(t => t.id);
+function nextId(id, d) { const i = ORDER_IDS.indexOf(id); return ORDER_IDS[(i + d + ORDER_IDS.length) % ORDER_IDS.length]; }
+/* Kâğıtta çizim varken desen değiştirmek çizimi siler; ilk dokunuşta uyarır. */
+function stepTpl(p, d, label) {
+  const go = () => { setTemplate(p, nextId(p.tplId, d)); if (layout === 1) renderTopbar(); };
+  if (!p.actions.length || (label && label.classList.contains('armed') && label._d === d)) { if (label) { clearTimeout(label._t); label.classList.remove('armed'); } go(); return; }
+  if (!label) { go(); return; }
+  label.classList.add('armed'); label._d = d; label.textContent = 'Çizim silinecek. Tekrar dokun.';
+  clearTimeout(label._t); label._t = setTimeout(() => { label.classList.remove('armed'); label.textContent = TPL(p.tplId).name; }, 3000);
+}
+
+/* ---------- Nasıl çizilir? gösterimi ---------- */
+function startDemo(p) {
+  stopDemo(p);
+  if (!p.strokes.length) { toast('Boş kâğıtta istediğini çiz.'); return; }
+  const g = p.mk.querySelector('.demo-g'); g.innerHTML = '';
+  p.pp.classList.remove('fade');
+  const total = p.strokes.reduce((a, s) => a + s.len, 0), speed = clamp(total / 6, 320, 1500), w = Math.max(6, p.road * 0.36);
+  let k = 0, t0 = 0, path = null, dotEl = null, L = 0;
+  const begin = () => {
+    const s = p.strokes[k];
+    path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', 'demo'); path.setAttribute('d', pathD(s.pts) + (s.closed ? 'Z' : '')); path.setAttribute('stroke-width', w);
+    g.appendChild(path);
+    L = path.getTotalLength ? path.getTotalLength() : s.len;
+    path.style.strokeDasharray = L + ' ' + (L + 10); path.style.strokeDashoffset = L;
+    if (!dotEl) { dotEl = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dotEl.setAttribute('class', 'demo-dot'); dotEl.setAttribute('r', clamp(p.road * 0.32, 10, 20)); g.appendChild(dotEl); }
+    t0 = performance.now();
+  };
+  const step = now => {
+    if (!path) begin();
+    const f = Math.min(1, (now - t0) / (L / speed * 1000));
+    path.style.strokeDashoffset = L * (1 - f);
+    const pt = path.getPointAtLength ? path.getPointAtLength(L * f) : { x: 0, y: 0 };
+    dotEl.setAttribute('cx', pt.x); dotEl.setAttribute('cy', pt.y);
+    if (f >= 1) { k++; path = null; if (k >= p.strokes.length) { p.demoRaf = 0; p.pp.classList.add('fade'); p.demoT = setTimeout(() => { g.innerHTML = ''; p.pp.classList.remove('fade'); }, 900); return; } }
+    p.demoRaf = requestAnimationFrame(step);
+  };
+  p.demoRaf = requestAnimationFrame(step);
+  if (layout === 1) tts.say('Yeşil noktadan başla. Çizginin üzerinden yıldıza kadar git.');
+}
+function stopDemo(p) {
+  if (p.demoRaf) cancelAnimationFrame(p.demoRaf);
+  p.demoRaf = 0; clearTimeout(p.demoT);
+  const g = p.mk && p.mk.querySelector('.demo-g'); if (g) g.innerHTML = '';
+  if (p.pp) p.pp.classList.remove('fade');
+}
+
+/* ---------- Kutlama ---------- */
+function celebrate(p) {
+  p.done = true;
+  const n = starsOf(p);
+  p.cel.querySelectorAll('.cs svg').forEach((s, k) => { s.classList.toggle('on', k < n); s.style.animation = 'none'; void s.offsetWidth; s.style.animation = ''; });
+  $('b', p.cel).textContent = layout === 4 ? 'Aferin!' : (n === 3 ? 'Aferin, harika!' : 'Aferin!');
+  $('small', p.cel).textContent = n === 3 ? 'Çizgiyi taşırmadan izledin. İstersen şimdi boya.' : 'Çizgiyi tamamladın. İstersen şimdi boya.';
+  p.cel.classList.add('on');
+  clearTimeout(p.celT); p.celT = setTimeout(() => hideCel(p), 6500);
+  sfx.win();
+  const r = p.pp.getBoundingClientRect(), s = stage.getBoundingClientRect();
+  confetti((r.left + r.width / 2 - s.left) / scale, (r.top + r.height * 0.35 - s.top) / scale, layout === 4 ? 50 : 110);
+  tts.say(layout > 1 ? `Aferin ${p.i + 1} numara! Çizgiyi tamamladın.` : (n === 3 ? 'Aferin! Çizgiyi hiç taşırmadan izledin. İstersen şimdi boyayabilirsin.' : 'Aferin! Çizgiyi tamamladın. İstersen şimdi boyayabilirsin.'));
+}
+function hideCel(p, now) { clearTimeout(p.celT); p.cel.classList.remove('on'); }
+
+/* =========================================================
+   Ekranlar
+   ========================================================= */
+function show(scr) { stage.dataset.screen = scr; }
+function layoutRects(n) {
+  if (n === 1) return [{ x: 16, y: 96, w: 1568, h: 794 }];
+  if (n === 2) return [0, 1].map(i => ({ x: 16 + i * 792, y: 96, w: 776, h: 794 }));
+  const w = (1600 - 32 - 36) / 4;
+  return [0, 1, 2, 3].map(i => ({ x: 16 + i * (w + 12), y: 96, w, h: 794 }));
+}
+function openDraw(id) {
+  panels.forEach(stopDemo);
+  layout = settings.layout;
+  const box = $('#panels'); box.innerHTML = ''; box.className = 'L' + layout;
+  const ids = id === MIX ? shuffleArr(ORDER_IDS.filter(x => x !== 'bos')).slice(0, layout) : [];
+  panels = layoutRects(layout).map((r, i) => { const p = Panel(i, r, id); box.appendChild(p.el); return p; });
+  show('draw');
+  renderTopbar();
+  panels.forEach((p, i) => setTemplate(p, id === MIX ? ids[i % ids.length] : id, true));
+  if (layout === 1) renderTopbar();
+  if (layout === 1) speakTpl(panels[0]);
+  else tts.say('Herkes kendi kâğıdında yeşil noktadan başlasın. Çizginin üzerinden geçin.');
+}
+function shuffleArr(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function speakTpl(p) {
+  if (layout > 1) return;
+  if (p.tplId === 'bos') tts.say('Boş kâğıt. İstediğin renkle istediğini çiz.');
+  else tts.say(`${TPL(p.tplId).name}. Yeşil noktadan başla, çizginin üzerinden geç.`);
+}
+function renderTopbar() {
+  const tb = $('#topbar');
+  const left = `<button type="button" class="ibtn" data-t="home" aria-label="Desenlere dön">${ICON.home}</button>`;
+  const right = `<button type="button" class="btn plain tbb" data-t="demo">${ICON.play}Nasıl çizilir?</button>
+    <button type="button" class="ibtn" data-t="clear" aria-label="${layout === 1 ? 'Kâğıdı temizle' : 'Bütün kâğıtları temizle'}">${ICON.trash}</button>
+    <button type="button" class="ibtn" data-t="save" aria-label="Resmi kaydet">${ICON.save}</button>
+    <button type="button" class="ibtn" id="sndBtn" data-t="sound" aria-label="Ses"></button>
+    <button type="button" class="ibtn" data-t="settings" aria-label="Öğretmen ayarları">${ICON.gear}</button>`;
+  if (layout === 1) {
+    const p = panels[0], id = p ? p.tplId : 'duz';
+    tb.innerHTML = left + `<div class="chip tpl-chip"><button type="button" class="ar" data-t="prev" aria-label="Önceki desen">${ICON.prev}</button><span class="tpl-name" id="tplName">${miniThumb(id)}<span>${esc(TPL(id).name)}</span></span><button type="button" class="ar" data-t="next" aria-label="Sonraki desen">${ICON.next}</button></div>
+      <div class="chip prog" id="prog"><div class="bar"><i></i></div><b>%0</b></div><span class="tb-sp"></span>` + right;
+    if (p && p.cps) updateProgress(p);
+  } else {
+    tb.innerHTML = left + `<span class="tb-lbl">Çizgi Takibi · ${layout} çocuk</span><div class="chip tpl-chip"><button type="button" class="ar" data-t="prevAll" aria-label="Herkese önceki desen">${ICON.prev}</button><span class="tpl-name" style="min-width:210px;justify-content:center;font-size:22px">Herkese aynı desen</span><button type="button" class="ar" data-t="nextAll" aria-label="Herkese sonraki desen">${ICON.next}</button></div><span class="tb-sp"></span>` + right;
+  }
+  updateSoundBtn();
+}
+function miniThumb(id) {
+  if (id === 'bos') return '<svg viewBox="0 0 1568 678" aria-hidden="true"></svg>';
+  const s = buildTpl(id, 1568, 678, ROAD[settings.road]);
+  return `<svg viewBox="0 0 1568 678" aria-hidden="true">${s.map(x => `<path d="${pathD(x.pts)}" fill="none" stroke="#24272B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</svg>`;
+}
+function renderTopProgress(p, v) {
+  const pr = $('#prog'); if (!pr) return;
+  pr.querySelector('.bar i').style.width = v + '%';
+  pr.querySelector('b').textContent = p.strokes.length ? `%${v}` : '—';
+}
+$('#topbar').addEventListener('click', e => {
+  const b = e.target.closest('[data-t]'); if (!b) return;
+  audio.get();
+  const k = b.dataset.t, p = panels[0];
+  if (k === 'home') goHome();
+  else if (k === 'prev' || k === 'next') stepTpl(p, k === 'next' ? 1 : -1, $('#tplName span'));
+  else if (k === 'prevAll' || k === 'nextAll') armAll(b, k === 'nextAll' ? 1 : -1);
+  else if (k === 'demo') panels.forEach(startDemo);
+  else if (k === 'clear') armClear(b, () => panels.forEach(clearPanel));
+  else if (k === 'save') saveImage();
+  else if (k === 'sound') { settings.sound = !settings.sound; saveSettings(); if (!settings.sound) tts.hush(); }
+  else if (k === 'settings') openSettings();
+});
+/* Tek kâğıtta, çizim varken desen değiştirirken bir kez uyar. */
+let topArm = null;
+function armAll(btn, d) {
+  const dirty = panels.some(p => p.actions.length);
+  if (dirty && topArm !== d) { topArm = d; toast('Bütün çizimler silinecek. Tekrar dokun.'); clearTimeout(armAll.t); armAll.t = setTimeout(() => { topArm = null; }, 3000); return; }
+  topArm = null;
+  const id = nextId(panels[0].tplId, d);
+  panels.forEach(p => setTemplate(p, id, true));
+}
+function goHome() { panels.forEach(stopDemo); tts.hush(); show('home'); renderHome(); }
+function updateSoundBtn() {
+  const s = $('#sndBtn'); if (!s) return;
+  s.innerHTML = settings.sound ? ICON.soundOn : ICON.soundOff; s.classList.toggle('off', !settings.sound);
+  s.setAttribute('aria-label', settings.sound ? 'Sesi kapat' : 'Sesi aç');
+}
+
+/* ---------- Ana ekran ---------- */
+const LAY_ICON = n => `<svg viewBox="0 0 30 22" aria-hidden="true">${Array.from({ length: n }, (_, i) => { const w = (28 - (n - 1) * 2) / n; return `<rect x="${1 + i * (w + 2)}" y="2" width="${w}" height="18" rx="2.5" fill="currentColor" opacity="${0.55 + 0.45 * (i % 2 ? 0.6 : 1)}"/>`; }).join('')}</svg>`;
+function renderHome() {
+  $('#laySeg').innerHTML = [1, 2, 4].map(n => `<button type="button" data-l="${n}" aria-pressed="${settings.layout === n}">${LAY_ICON(n)}${n}</button>`).join('');
+  $('#setBtn').innerHTML = ICON.gear + 'Ayarlar';
+  const rot = [-1.2, 0.8, -0.5, 1.1, 0.4, -0.9, 1.3, -0.3, 0.6, -1.1, 0.9, -0.6];
+  $('#grid').innerHTML = TPLS.map((t, i) => `<button type="button" class="card" data-id="${t.id}" style="--r:${rot[i]}deg">${thumbSVG(t.id, 1568, 678)}<b>${esc(t.name)}</b></button>`).join('') +
+    `<button type="button" class="card mix" data-id="${MIX}" style="--r:${rot[11]}deg"><span class="th"><svg class="dice" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="6" width="52" height="52" rx="12" fill="#FFC531" stroke="#24272B" stroke-width="3"/><g fill="#24272B"><circle cx="20" cy="20" r="5"/><circle cx="44" cy="20" r="5"/><circle cx="32" cy="32" r="5"/><circle cx="20" cy="44" r="5"/><circle cx="44" cy="44" r="5"/></g></svg></span><b>Karışık desen</b></button>`;
+}
+$('#laySeg').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (!b) return; settings.layout = +b.dataset.l; saveSettings(); renderHome(); sfx.pick(); });
+$('#grid').addEventListener('click', e => { const c = e.target.closest('[data-id]'); if (!c) return; audio.get(); openDraw(c.dataset.id); });
+/* Site ya da zip içinden açıldıysa (…/oyunlar/oyun.html) oyun listesine dönüş düğmesi görünür; Claude sayfasında gizli kalır. */
+try { if (/\/oyunlar\/[^/]+\.html$/i.test(location.pathname)) $('#listBtn').hidden = false; } catch (e) {}
+$('#setBtn').addEventListener('click', openSettings);
+
+/* =========================================================
+   Öğretmen ayarları
+   ========================================================= */
+let modalOnClose = null;
+function openModal(html, mount, onClose) {
+  const m = $('#modal'), old = $('#sheet'), s = old.cloneNode(false);
+  old.replaceWith(s); s.className = 'sheet'; s.innerHTML = html; s.setAttribute('aria-labelledby', 'mTitle'); s.scrollTop = 0;
+  m.hidden = false; modalOnClose = onClose || null;
+  if (mount) mount(s);
+}
+function closeModal() { $('#modal').hidden = true; $('#sheet').innerHTML = ''; const cb = modalOnClose; modalOnClose = null; if (cb) cb(); }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#modal').hidden) { closeModal(); return; }
+  if (stage.dataset.screen === 'draw' && layout === 1 && $('#modal').hidden && panels[0]) {
+    if (e.key === 'ArrowRight') stepTpl(panels[0], 1, $('#tplName span'));
+    else if (e.key === 'ArrowLeft') stepTpl(panels[0], -1, $('#tplName span'));
+  }
+});
+$('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal') closeModal(); });
+const SEGS = [
+  { key: 'road', label: 'Yol genişliği', hint: 'Çizginin çevresindeki açık renkli yol. İnce yol daha dikkat ister.', opts: [['wide', 'Geniş'], ['mid', 'Orta'], ['thin', 'İnce']] },
+  { key: 'line', label: 'Çizgi', opts: [['dash', 'Kesik kesik'], ['solid', 'Düz (kâğıttaki gibi)']] },
+  { key: 'marks', label: 'Başlangıç ve bitiş', hint: 'Yeşil nokta ve ok nereden başlanacağını, yıldız nerede bitirileceğini gösterir.', opts: [[true, 'Göster'], [false, 'Gizle']] },
+  { key: 'sound', label: 'Ses efektleri ve seslendirme', opts: [[true, 'Açık'], [false, 'Kapalı']] },
+  { key: 'ttsRate', label: 'Konuşma hızı', opts: [['slow', 'Yavaş'], ['normal', 'Normal'], ['fast', 'Hızlı']] }
+];
+const segRow = g => `<div class="set-row"><div><b>${g.label}</b>${g.hint ? `<small>${g.hint}</small>` : ''}</div>
+  <div class="grow"><div class="seg" data-key="${g.key}">${g.opts.map(([v, l]) => `<button type="button" data-v="${String(v)}" aria-pressed="${String(settings[g.key]) === String(v)}">${l}</button>`).join('')}</div></div></div>`;
+/*@@SHARED_VOICE@@*/
+function openSettings() {
+  const before = settings.road + settings.line + settings.marks;
+  openModal(`<button type="button" class="sheet-x" aria-label="Kapat">${ICON.close}</button>
+    <h2 id="mTitle">Öğretmen ayarları</h2>
+    <p class="lead">Ayarlar bu cihazda saklanır. Akıllı tahtada birden fazla çocuk aynı anda çizebilir; ana ekrandan 2 ya da 4 çocuk seçin.</p>
+    <h3 class="set-h">Desen</h3>${SEGS.slice(0, 3).map(segRow).join('')}
+    <h3 class="set-h">Ses</h3>${SEGS.slice(3).map(segRow).join('')}
+    <div class="set-row top"><div><b>Konuşan ses</b><small>Otomatik seçimde önce kadın sesi kullanılır.</small></div><div class="grow" id="voiceBox"></div></div>
+    <div class="sheet-foot"><button type="button" class="btn go" id="closeSet">Kaydet ve kapat</button></div>`, sheet => {
+    sheet.querySelectorAll('.seg[data-key]').forEach(seg => seg.addEventListener('click', e => {
+      const b = e.target.closest('button[data-v]'); if (!b) return;
+      const key = seg.dataset.key; let v = b.dataset.v;
+      if (key === 'marks' || key === 'sound') v = v === 'true';
+      settings[key] = v; saveSettings();
+      seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      if (key === 'sound') { if (v) audio.get(); else tts.hush(); }
+    }));
+    mountVoiceRow(sheet);
+    $('.sheet-x', sheet).addEventListener('click', closeModal);
+    $('#closeSet', sheet).addEventListener('click', closeModal);
+  }, () => {
+    if (settings.road + settings.line + settings.marks === before) return;
+    if (stage.dataset.screen === 'home') renderHome();
+    else panels.forEach(applyLook);
+  });
+}
+/* Görünüm ayarı değişince desen yeniden kurulur; çizimler korunur, ilerleme sıfırlanır. */
+function applyLook(p) {
+  const acts = p.actions.slice(), bF = p.baseF, bI = p.baseI;
+  setTemplate(p, p.tplId, true);
+  p.actions = acts; p.baseF = bF; p.baseI = bI; replay(p); syncTools(p);
+  if (layout === 1) renderTopbar();
+}
+
+/* =========================================================
+   Resmi kaydet
+   ========================================================= */
+let dl = null;
+function guideOnCanvas(x, p, ox, oy, k) {
+  x.save(); x.translate(ox, oy); x.scale(k, k);
+  x.lineCap = 'round'; x.lineJoin = 'round';
+  p.strokes.forEach(s => { x.beginPath(); s.pts.forEach((q, j) => j ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1])); if (s.closed) x.closePath(); x.strokeStyle = 'rgba(120,150,185,.2)'; x.lineWidth = p.road; x.stroke(); });
+  p.strokes.forEach(s => { x.beginPath(); s.pts.forEach((q, j) => j ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1])); if (s.closed) x.closePath(); x.strokeStyle = settings.line === 'solid' ? '#24272B' : '#55606C'; x.lineWidth = Math.max(3, p.road * 0.09); if (settings.line !== 'solid' && x.setLineDash) x.setLineDash([p.road * 0.34, p.road * 0.26]); x.stroke(); if (x.setLineDash) x.setLineDash([]); });
+  x.restore();
+}
+async function saveImage() {
+  const K = 2, gap = 30, foot = 70;
+  const tw = panels.reduce((a, p) => a + p.pw, 0) + gap * (panels.length + 1), th = Math.max.apply(null, panels.map(p => p.ph)) + gap * 2 + foot;
+  const c = document.createElement('canvas'); c.width = tw * K; c.height = th * K;
+  const x = c.getContext('2d'); x.scale(K, K);
+  x.fillStyle = '#F4E9D8'; x.fillRect(0, 0, tw, th);
+  let ox = gap;
+  panels.forEach(p => {
+    x.fillStyle = '#FFFFFF'; x.fillRect(ox, gap, p.pw, p.ph);
+    x.drawImage(p.cf, ox, gap, p.pw, p.ph);
+    guideOnCanvas(x, p, ox, gap, 1);
+    x.drawImage(p.ci, ox, gap, p.pw, p.ph);
+    if (panels.length > 1) { x.fillStyle = NUM_COL[p.i % 4]; x.beginPath(); x.arc(ox + 26, gap + 26, 18, 0, Math.PI * 2); x.fill(); x.fillStyle = '#fff'; x.font = '700 22px Fredoka, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(p.i + 1), ox + 26, gap + 27); }
+    ox += p.pw + gap;
+  });
+  const d = new Date(), ds = d.toLocaleDateString('tr-TR');
+  x.fillStyle = '#5A4A3A'; x.font = '600 28px Fredoka, sans-serif'; x.textAlign = 'left'; x.textBaseline = 'middle';
+  x.fillText(`Çizgi Takibi · ${panels.map(p => TPL(p.tplId).name).filter((v, i, a) => a.indexOf(v) === i).join(', ')} · ${ds}`, gap, th - foot / 2 - 6);
+  const iso = d.toISOString().slice(0, 10), filename = `cizgi-takibi-${iso}.png`;
+  const blob = await new Promise(r => { try { c.toBlob(b => r(b), 'image/png'); } catch (e) { r(null); } });
+  if (!blob) { toast('Resim hazırlanamadı.'); return; }
+  if (dl) {
+    try { await dl.save({ filename, data: blob }); toast('Resim kaydedildi.'); }
+    catch (e) { const code = e && e.code; if (code !== 'declined') toast(code === 'rate_limited' ? 'Bir kaydetme penceresi zaten açık.' : 'Resim kaydedilemedi.'); }
+    return;
+  }
+  if (canBlob) {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    toast('Resim indirildi.');
+  } else toast('Bu cihazda kaydetme desteklenmiyor.');
+}
+
+/* =========================================================
+   Konfeti ve bildirim
+   ========================================================= */
+const fx = $('#fx'), fctx = fx.getContext('2d');
+fx.style.visibility = 'hidden';
+let parts = [], fxOn = false;
+const COLS = ['#FFD84D', '#3FB068', '#FF8B3A', '#3B8BDF', '#E5579A', '#FFFFFF'];
+function startFx() { if (!fxOn) { fxOn = true; fx.style.visibility = 'visible'; requestAnimationFrame(fxLoop); } }
+function confetti(x, y, count) {
+  if (reduceMotion) return;
+  for (let i = 0; i < count; i++) parts.push({ x, y, vx: rand(-8, 8), vy: rand(-15, -4), r: rand(0, 6.28), vr: rand(-.3, .3), w: rand(8, 14), h: rand(10, 18), c: COLS[i % COLS.length], life: rand(70, 115), g: 0.42 });
+  startFx();
+}
+function fxLoop() {
+  fctx.clearRect(0, 0, W, H);
+  parts = parts.filter(p => p.life-- > 0 && p.y < H + 40);
+  for (const p of parts) {
+    p.vy += p.g; p.vx *= 0.985; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    fctx.save(); fctx.translate(p.x, p.y); fctx.rotate(p.r);
+    fctx.globalAlpha = Math.min(1, p.life / 22); fctx.fillStyle = p.c;
+    fctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2)) + 2);
+    fctx.restore();
+  }
+  if (parts.length) requestAnimationFrame(fxLoop); else { fxOn = false; fctx.clearRect(0, 0, W, H); fx.style.visibility = 'hidden'; }
+}
+let toastT = 0;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* =========================================================
+   Başlat
+   ========================================================= */
+window.addEventListener('resize', () => { fit(); if (stage.dataset.screen === 'draw') panels.forEach(p => sizeCanvases(p, false)); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { panels.forEach(stopDemo); } });
+renderHome();
+if (inClaude) { (async () => { try { dl = await window.claude.use('downloads'); } catch (e) { dl = null; } })(); }
+})();
+</script>
